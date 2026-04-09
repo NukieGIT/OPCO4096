@@ -21,6 +21,8 @@ pub fn build(b: *std.Build) void {
     // target and optimize options) will be listed when running `zig build --help`
     // in this directory.
 
+    const zjb = b.dependency("zjb", .{});
+
     // This creates a module, which represents a collection of source files alongside
     // some compilation options, such as optimization mode and linked system libraries.
     // Zig modules are the preferred way of making Zig code available to consumers.
@@ -93,6 +95,12 @@ pub fn build(b: *std.Build) void {
     });
     wasm_lib.entry = .disabled;
     wasm_lib.rdynamic = true;
+    wasm_lib.root_module.addImport("zjb", zjb.module("zjb"));
+
+    const extract_wasm_lib = b.addRunArtifact(zjb.artifact("generate_js"));
+    const extract_wasm_lib_out = extract_wasm_lib.addOutputFileArg("zjb_extract.js");
+    extract_wasm_lib.addArg("Zjb");
+    extract_wasm_lib.addArtifactArg(wasm_lib);
 
     // This declares intent for the executable to be installed into the
     // install prefix when running `zig build` (i.e. when executing the default
@@ -107,6 +115,8 @@ pub fn build(b: *std.Build) void {
     });
     const wasm_step = b.step("wasm", "Build the wasm32 library artifact");
     wasm_step.dependOn(&wasm_install.step);
+
+    wasm_step.dependOn(&b.addInstallFileWithDir(extract_wasm_lib_out, .prefix, "zjb_extract.js").step);
 
     // This creates a top level step. Top level steps have a name and can be
     // invoked by name when running `zig build` (e.g. `zig build run`).

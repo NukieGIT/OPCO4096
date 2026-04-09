@@ -1,6 +1,19 @@
 /// <reference types="vite/client" />
 
-declare module '*.wasm' {
-	const exports: Record<string, unknown>
-	export = exports
+type ZjbInstance = {
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	imports: any
+	setInstance(instance: WebAssembly.Instance): void
 }
+
+type ZjbConstructor = {
+	new (): ZjbInstance
+}
+
+declare global {
+	interface Window {
+		Zjb: ZjbConstructor
+	}
+}
+
+export {}

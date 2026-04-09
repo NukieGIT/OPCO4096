@@ -40,3 +40,4 @@ __screenshots__/
 
 # WASM
 public/*.wasm
+public/zjb_extract.js
