@@ -1,13 +1,13 @@
 import type { OPCO4096 } from '@/ts/wasm/OPCO4096Typings'
 
-let opco4096Instance: OPCO4096 | null = null
+let opco4096Instance: OPCO4096 = null!
 
 const zjb = new window.Zjb()
 const importObject: WebAssembly.Imports = {
   zjb: zjb.imports,
 }
 
-export async function load() {
+async function load() {
   const response = await fetch("/OPCO4096-wasm.wasm")
   let result: WebAssembly.WebAssemblyInstantiatedSource
   try {
@@ -23,9 +23,13 @@ export async function load() {
   return result.instance.exports as OPCO4096
 }
 
-export default async function getOPCO4096Instance() {
+export async function initialize() {
   if (!opco4096Instance) {
     opco4096Instance = await load()
+    return opco4096Instance
   }
+  console.warn("OPCO4096 instance already initialized");
   return opco4096Instance
 }
+
+export { opco4096Instance as opco }

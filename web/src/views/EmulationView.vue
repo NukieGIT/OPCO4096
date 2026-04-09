@@ -3,9 +3,7 @@
 </template>
 
 <script setup lang="ts">
-import getOpco from '@/ts/wasm/OPCO4096'
-
-const opco = await getOpco()
+import { opco } from '@/ts/wasm/OPCO4096'
 
 opco.hello_from_zig()
 

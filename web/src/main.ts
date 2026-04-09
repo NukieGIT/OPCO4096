@@ -5,6 +5,9 @@ import { createPinia } from 'pinia'
 
 import App from './App.vue'
 import router from './router'
+import { initialize } from '@/ts/wasm/OPCO4096'
+
+await initialize()
 
 const app = createApp(App)
 
