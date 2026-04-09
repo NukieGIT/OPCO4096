@@ -9,12 +9,14 @@ const importObject: WebAssembly.Imports = {
 }
 
 async function load() {
-  const response = await fetch("/OPCO4096-wasm.wasm")
+  const response = await fetch('/OPCO4096-wasm.wasm')
   let result: WebAssembly.WebAssemblyInstantiatedSource
   try {
     result = await WebAssembly.instantiateStreaming(response, importObject)
   } catch {
-    console.warn("WebAssembly.instantiateStreaming failed, falling back to ArrayBuffer instantiation. Not supported?")
+    console.warn(
+      'WebAssembly.instantiateStreaming failed, falling back to ArrayBuffer instantiation. Not supported?',
+    )
     const bytes = await response.arrayBuffer()
     result = await WebAssembly.instantiate(bytes, importObject)
   }
@@ -31,7 +33,7 @@ export async function initialize() {
     opco4096Instance = await load()
     return opco4096Instance
   }
-  console.warn("OPCO4096 instance already initialized");
+  console.warn('OPCO4096 instance already initialized')
   return opco4096Instance
 }
 

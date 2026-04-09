@@ -1,15 +1,23 @@
-import type { OPCO4096 } from "@/ts/wasm/OPCO4096Typings"
+import type { OPCO4096 } from '@/ts/wasm/OPCO4096Typings'
 
-const PLACEHOLDER_FUNCTION_BODY = () => { throw new Error("Placeholder function for typing validation") }
-const PLACEHOLDER_OBJECT_BODY = { placeholder: "This is a placeholder object for typing validation" }
+const PLACEHOLDER_FUNCTION_BODY = () => {
+  throw new Error('Placeholder function for typing validation')
+}
+const PLACEHOLDER_OBJECT_BODY = {
+  placeholder: 'This is a placeholder object for typing validation',
+}
 
 export const OPCO4096ValidationObject: OPCO4096 = {
-  add: function (a: number, b: number): number { return PLACEHOLDER_FUNCTION_BODY() },
-  hello_from_zig: function (): void { PLACEHOLDER_FUNCTION_BODY() },
+  add: function (_a: number, _b: number): number {
+    return PLACEHOLDER_FUNCTION_BODY()
+  },
+  hello_from_zig: function (): void {
+    PLACEHOLDER_FUNCTION_BODY()
+  },
   memory: PLACEHOLDER_OBJECT_BODY as unknown as WebAssembly.Memory,
 }
 
-const LOG_PREFIX = "[OPCO4096 Validator]"
+const LOG_PREFIX = '[OPCO4096 Validator]'
 
 export function validate(opco: OPCO4096) {
   for (const key in OPCO4096ValidationObject) {
@@ -20,7 +28,9 @@ export function validate(opco: OPCO4096) {
     const expectedType = typeof OPCO4096ValidationObject[key as keyof OPCO4096]
     const actualType = typeof opco[key as keyof OPCO4096]
     if (expectedType !== actualType) {
-      throw new Error(`${LOG_PREFIX} Type mismatch for key "${key}": expected ${expectedType}, got ${actualType}`)
+      throw new Error(
+        `${LOG_PREFIX} Type mismatch for key "${key}": expected ${expectedType}, got ${actualType}`,
+      )
     }
   }
 

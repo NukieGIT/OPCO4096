@@ -1,17 +1,26 @@
-*, *::after, *::before {
-    box-sizing: border-box;
+@import 'base.css';
+@import 'crt.css';
+
+*,
+*::after,
+*::before {
+  box-sizing: border-box;
 }
 
 * {
-    margin: 0;
-    padding: 0;
-    font: inherit;
+  margin: 0;
+  padding: 0;
 }
 
 html {
-    color-scheme: light dark;
+  color-scheme: dark;
 }
 
 body {
-    min-height: 100svh;
+  min-height: 100svh;
+}
+
+*::selection {
+  background: var(--crt-selection-bg);
+  color: var(--crt-selection-fg);
 }

@@ -1,0 +1,72 @@
+/*
+* Style by D3NN7
+* and Patrick Hlauke (https://codepen.io/patrickhlauke/pen/YaoBop)
+*
+* Modified to fit the theme of the website
+*/
+
+* {
+  text-shadow: inherit;
+  animation-name: textflicker;
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+}
+
+html {
+  background: var(--crt-bg);
+  color: var(--crt-fg);
+  text-shadow:
+    0.06rem 0 0.06rem var(--crt-glow-magenta),
+    -0.125rem 0 0.06rem var(--crt-glow-green);
+  letter-spacing: 0.125em;
+  animation-duration: 0.01s;
+  animation-name: textflicker;
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+}
+
+.crt-border,
+input {
+  border: 1px dashed var(--crt-border); /* dotted also looks good */
+  box-shadow:
+    0.06rem 0 0.06rem var(--crt-glow-magenta),
+    -0.125rem 0 0.06rem var(--crt-glow-green);
+  animation-duration: 0.01s;
+  animation-name: boxshadowflicker;
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+}
+
+input {
+  background: var(--crt-bg);
+  font-size: 1em;
+  padding: 0.5em;
+}
+
+@keyframes textflicker {
+  from {
+    text-shadow:
+      1px 0 0 var(--crt-glow-magenta),
+      -2px 0 0 var(--crt-glow-green);
+  }
+
+  to {
+    text-shadow:
+      2px 0.5px 2px var(--crt-glow-magenta),
+      -1px -0.5px 2px var(--crt-glow-green);
+  }
+}
+
+@keyframes boxshadowflicker {
+  from {
+    box-shadow:
+      0.5px 0 0 0 var(--crt-glow-magenta),
+      -1px 0 0 0 var(--crt-glow-green);
+  }
+
+  to {
+    box-shadow:
+      1px 0.5px 1px 0 var(--crt-glow-magenta),
+      -0.5px -0.5px 1px 0 var(--crt-glow-green);
+  }
+}

@@ -1,0 +1,33 @@
+@font-face {
+  font-family: 'Agave Nerd Mono';
+  font-style: normal;
+  font-weight: 400;
+  src: url(./fonts/AgaveNerd/AgaveNerdFontMono-Regular.ttf);
+}
+
+:root {
+  --crt-bg: #111;
+  --crt-fg: #eee;
+  --crt-border: var(--crt-fg);
+
+  /* Chromatic aberration */
+  --crt-glow-magenta: #ea36af;
+  --crt-glow-green: #75fa69;
+
+  /* Text */
+  --crt-text: var(--crt-fg);
+  --crt-text-muted: color-mix(in oklab, var(--crt-fg) 70%, var(--crt-bg));
+  --crt-text-dim: color-mix(in oklab, var(--crt-fg) 50%, var(--crt-bg));
+
+  /* Surfaces */
+  --crt-surface-1: var(--crt-bg);
+  --crt-surface-2: color-mix(in oklab, var(--crt-bg) 85%, var(--crt-fg));
+
+  /* Selection */
+  --crt-selection-bg: var(--crt-fg);
+  --crt-selection-fg: var(--crt-bg);
+}
+
+html {
+  font-family: Agave Nerd Mono;
+}
