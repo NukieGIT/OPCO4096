@@ -93,7 +93,6 @@ pub fn build(b: *std.Build) void {
     });
     wasm_lib.entry = .disabled;
     wasm_lib.rdynamic = true;
-    wasm_lib.link_gc_sections = false;
 
     // This declares intent for the executable to be installed into the
     // install prefix when running `zig build` (i.e. when executing the default
