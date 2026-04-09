@@ -100,7 +100,11 @@ pub fn build(b: *std.Build) void {
     // by passing `--prefix` or `-p`.
     b.installArtifact(exe);
 
-    const wasm_install = b.addInstallArtifact(wasm_lib, .{});
+    // Run zig build wasm -p ../web/public to build the wasm library and copy it to the web/public directory.
+    const wasm_install = b.addInstallArtifact(wasm_lib, .{
+        .dest_dir = .{ .override = .prefix },
+        .dest_sub_path = "OPCO4096-wasm.wasm",
+    });
     const wasm_step = b.step("wasm", "Build the wasm32 library artifact");
     wasm_step.dependOn(&wasm_install.step);
 
