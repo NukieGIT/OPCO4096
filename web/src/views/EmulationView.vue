@@ -3,30 +3,12 @@
 </template>
 
 <script setup lang="ts">
-const zjb = new window.Zjb()
-const importObject: WebAssembly.Imports = {
-  zjb: zjb.imports,
-}
+import getOpco from '@/ts/wasm/OPCO4096'
 
-async function load() {
-  const response = await fetch("/OPCO4096-wasm.wasm")
-  let result: WebAssembly.WebAssemblyInstantiatedSource
-  try {
-    result = await WebAssembly.instantiateStreaming(response, importObject)
-  } catch {
-    console.warn("WebAssembly.instantiateStreaming failed, falling back to ArrayBuffer instantiation. Not supported?")
-    const bytes = await response.arrayBuffer()
-    result = await WebAssembly.instantiate(bytes, importObject)
-  }
+const opco = await getOpco()
 
-  zjb.setInstance(result.instance)
+opco.hello_from_zig()
 
-  const exportsObj = result.instance.exports
-  console.log(exportsObj.add(1, 5))
-  exportsObj.hello_from_zig()
-}
-
-void load()
 </script>
 
 <style scoped></style>
