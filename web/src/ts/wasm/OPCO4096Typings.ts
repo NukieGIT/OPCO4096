@@ -1,9 +1,8 @@
-export interface OPCO4096 extends WebAssemblyExports {
+export interface OPCO4096 extends WebAssemblyDefaultExports {
   add(a: number, b: number): number
   hello_from_zig(): void
 }
 
-interface WebAssemblyExports {
+interface WebAssemblyDefaultExports {
   memory: WebAssembly.Memory
-  [key: string]: WebAssembly.ExportValue
 }

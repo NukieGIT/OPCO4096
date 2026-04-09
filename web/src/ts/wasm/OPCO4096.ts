@@ -1,4 +1,5 @@
 import type { OPCO4096 } from '@/ts/wasm/OPCO4096Typings'
+import { validate } from '@/ts/wasm/OPCO4096Validator'
 
 let opco4096Instance: OPCO4096 = null!
 
@@ -18,9 +19,11 @@ async function load() {
     result = await WebAssembly.instantiate(bytes, importObject)
   }
 
+  validate(result.instance.exports as unknown as OPCO4096)
+
   zjb.setInstance(result.instance)
 
-  return result.instance.exports as OPCO4096
+  return result.instance.exports as unknown as OPCO4096
 }
 
 export async function initialize() {
