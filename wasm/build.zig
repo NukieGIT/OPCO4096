@@ -108,7 +108,7 @@ pub fn build(b: *std.Build) void {
     // by passing `--prefix` or `-p`.
     b.installArtifact(exe);
 
-    // Run zig build wasm -p ../web/public to build the wasm library and copy it to the web/public directory.
+    // Allow overriding of install path
     const wasm_install = b.addInstallArtifact(wasm_lib, .{
         .dest_dir = .{ .override = .prefix },
         .dest_sub_path = "OPCO4096-wasm.wasm",
@@ -117,6 +117,11 @@ pub fn build(b: *std.Build) void {
     wasm_step.dependOn(&wasm_install.step);
 
     wasm_step.dependOn(&b.addInstallFileWithDir(extract_wasm_lib_out, .prefix, "zjb_extract.js").step);
+
+    const wasm_copy = b.addInstallFileWithDir(wasm_lib.getEmittedBin(), .{ .custom = "../../web/public/" }, "OPCO4096-wasm.wasm");
+    wasm_step.dependOn(&wasm_copy.step);
+
+    wasm_step.dependOn(&b.addInstallFileWithDir(extract_wasm_lib_out, .{ .custom = "../../web/public/" }, "zjb_extract.js").step);
 
     // This creates a top level step. Top level steps have a name and can be
     // invoked by name when running `zig build` (e.g. `zig build run`).
