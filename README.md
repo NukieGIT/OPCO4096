@@ -29,7 +29,7 @@ Designed to bridge the gap between high-level reactive frameworks (**Vue 3**) an
 
 # Build the WASM module
 > cd ../wasm
-> zig build wasm -p ../web/public
+> zig build wasm
 
 # Run the app
 > npm run dev
