@@ -1,4 +1,4 @@
-import type { WebAssemblyAllocator } from "@/ts/wasm/OPCO4096Typings"
+import type { WebAssemblyAllocator } from '@/ts/wasm/OPCO4096Typings'
 
 export type u32 = number
 

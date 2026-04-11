@@ -1,6 +1,4 @@
-export interface OPCO4096 extends WebAssemblyDefaultExports, WebAssemblyAllocator {
-
-}
+export interface OPCO4096 extends WebAssemblyDefaultExports, WebAssemblyAllocator {}
 
 export interface WebAssemblyAllocator {
   /**

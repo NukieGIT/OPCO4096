@@ -20,13 +20,9 @@ const result = computed(() => {
 const sw = new StringWriter(opco.memory, opco)
 const sr = new StringReader(opco.memory)
 
-const strData = sw.writeString("Hello, WebAssembly!")
-console.log(strData);
-console.log(sr.readString(strData));
-
-
-
-
+const strData = sw.writeString('Hello, WebAssembly!')
+console.log(strData)
+console.log(sr.readString(strData))
 </script>
 
 <style scoped></style>

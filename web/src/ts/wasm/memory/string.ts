@@ -1,4 +1,4 @@
-import { MemoryReader, MemoryWriter, type u32 } from '@/ts/wasm/memory/io'
+import { MemoryReader, MemoryWriter, type u32 } from '@/ts/wasm/memory/raw'
 import type { WebAssemblyAllocator } from '@/ts/wasm/OPCO4096Typings'
 
 /**
