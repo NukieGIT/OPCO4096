@@ -14,6 +14,15 @@ export const OPCO4096ValidationObject: OPCO4096 = {
   hello_from_zig: function (): void {
     PLACEHOLDER_FUNCTION_BODY()
   },
+  allocate: function (_len: number): number {
+    return PLACEHOLDER_FUNCTION_BODY()
+  },
+  deallocate: function (_ptr: number, _len: number): void {
+    PLACEHOLDER_FUNCTION_BODY()
+  },
+  printThing: function (_ptr: number, _len: number): void {
+    PLACEHOLDER_FUNCTION_BODY()
+  },
   memory: PLACEHOLDER_OBJECT_BODY as unknown as WebAssembly.Memory,
 }
 

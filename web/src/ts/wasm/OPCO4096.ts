@@ -6,6 +6,10 @@ let opco4096Instance: OPCO4096 = null!
 const zjb = new window.Zjb()
 const importObject: WebAssembly.Imports = {
   zjb: zjb.imports,
+  env: {
+    memory: new WebAssembly.Memory({ initial: 1 }),
+    __stack_pointer: 0,
+  },
 }
 
 async function load() {
