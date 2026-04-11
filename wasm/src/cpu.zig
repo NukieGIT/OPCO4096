@@ -33,10 +33,11 @@ const Chip8CPU = struct {
     v: [16]u8 = [_]u8{0} ** 16,
 
     fn loadFontSet(self: *Chip8CPU) void {
-        for (FONT_SET, 0..) |character, i| {
+        std.debug.print("[/] Loading font set into RAM...\n", .{});
+        for (FONT_SET, 0..) |_, i| {
             self.memory[i] = FONT_SET[i];
-            std.debug.print("{}\n", .{character});
         }
+        std.debug.print("[+] Font set loaded!\n", .{});
     }
 };
 
@@ -49,19 +50,21 @@ test "screen" {
         cpu.memory[ROM_START_ADDRESS + i] = INSTRUCTION_SET[i];
     }
     for (INSTRUCTION_SET, 0..) |_, i| {
-        std.debug.print("Cycle: {}\n", .{i});
+        std.debug.print("\n[?] Current cycle: {}\n", .{i});
         cycle();
     }
 }
 
 fn init() void {
-    std.debug.print("[/] Initializing core...\n", .{});
+    std.debug.print("\n[/] Initializing core...\n", .{});
     cpu.loadFontSet();
+    std.debug.print("[+] Core initialized!\n", .{});
 }
 
 fn cycle() void {
     // Fetch
     const opcode: u16 = cpu.memory[cpu.pc];
+    std.debug.print("[?] Current instruction: 0x{x} at pc: 0x{x}\n", .{ opcode, cpu.pc });
     cpu.pc += 2;
 
     const first_nibble = opcode & 0xF000; // First hexadecimal number
@@ -71,7 +74,6 @@ fn cycle() void {
     const x = opcode & 0x0F00; // Register lookup
     const y = opcode & 0x00F0; // Register lookup
 
-    std.debug.print("First nibble: {}\n", .{first_nibble});
     // Decode
     switch (first_nibble) {
         0x0000 => {
@@ -81,7 +83,7 @@ fn cycle() void {
                     std.debug.print("[+] Cleared screen.\n", .{});
                 },
                 else => {
-                    std.debug.print("[-] Invalid instruction: {}\n", .{opcode});
+                    std.debug.print("[!!!] Invalid instruction: {}\n", .{opcode});
                 },
             }
         },
@@ -91,12 +93,15 @@ fn cycle() void {
         },
         0x6000 => { // LD Vx, byte
             cpu.v[x] = nn;
+            std.debug.print("[+] Put value {} to register V{}\n", .{ nn, cpu.v[x] });
         },
         0x7000 => { // ADD Vx, byte
             cpu.v[x] += nn;
+            std.debug.print("[+] Add value {} to register V{}\n", .{ nn, cpu.v[x] });
         },
         0xA000 => { // LD I, addr
             cpu.i = nnn;
+            std.debug.print("[+] Set index register to {}\n", .{nnn});
         },
         0xD000 => { // DRW Vx, Vy, nibble
             const x_cord = cpu.v[x] & 63; // Column
@@ -112,9 +117,11 @@ fn cycle() void {
                     screen_offset += 64;
                 }
             }
+            std.debug.print("[+] Draw sprite\n", .{});
         },
         else => {
-            std.debug.print("PANIK", .{});
+            std.debug.print("[!!!] Invalid instruction: {}\n", .{opcode});
         },
     }
+    std.debug.print("[+] Cycle completed!\n", .{});
 }
