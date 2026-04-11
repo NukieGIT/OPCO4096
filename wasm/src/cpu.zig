@@ -90,8 +90,8 @@ pub fn cycle() void {
     const nnn = opcode & 0x0FFF; // 12-bit immediate memory address
     const nn: u8 = @truncate(opcode & 0x00FF); // 8-bit immediate number
     //const n = opcode & 0x000F;  4-bit number
-    const x = opcode & 0x0F00 >> 8; // Register lookup
-    const y = opcode & 0x00F0 >> 4; // Register lookup
+    const x = (opcode & 0x0F00) >> 8; // Register lookup
+    const y = (opcode & 0x00F0) >> 4; // Register lookup
 
     // Decode
     switch (first_nibble) {
