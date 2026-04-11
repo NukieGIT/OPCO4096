@@ -47,8 +47,8 @@ pub const Chip8CPU = struct {
             const LSB_value: u8 = @truncate(value & 0x00FF);
             const MSB_value: u8 = @truncate(value >> 8 & 0x00FF);
             std.debug.print("[?] LSB: 0x{x} | MSB: 0x{x} | RAW: 0x{x}\n", .{ LSB_value, MSB_value, value });
-            self.memory[ROM_START_ADDRESS + (i * 2)] = LSB_value;
-            self.memory[ROM_START_ADDRESS + (i * 2) + 1] = MSB_value;
+            self.memory[ROM_START_ADDRESS + (i * 2)] = MSB_value;
+            self.memory[ROM_START_ADDRESS + (i * 2) + 1] = LSB_value;
         }
         std.debug.print("[+] Instructions set loaded!\n", .{});
     }
@@ -79,11 +79,9 @@ pub fn init(instructions: []u16, runtime_cycles: comptime_int) void {
 
 pub fn cycle() void {
     // Fetch
-    const LSB_opcode = cpu.memory[cpu.pc];
-    const MSB_opcode = cpu.memory[cpu.pc + 1];
-    var opcode: u16 = 0;
-    opcode = opcode | MSB_opcode;
-    opcode = opcode << 8 | LSB_opcode;
+    const MSB_opcode = cpu.memory[cpu.pc];
+    const LSB_opcode = cpu.memory[cpu.pc + 1];
+    const opcode = (@as(u16, MSB_opcode) << 8) | LSB_opcode;
     cpu.pc += 2;
 
     const first_nibble = opcode & 0xF000; // First hexadecimal number
