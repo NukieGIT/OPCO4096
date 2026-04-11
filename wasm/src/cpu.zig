@@ -24,7 +24,7 @@ const FONT_SET = [_]u8{
 
 const Chip8CPU = struct {
     memory: [MEMORY_SIZE]u8 = [_]u8{0} ** MEMORY_SIZE,
-    display: [64 * 32]u8 = [_]u8{0} ** (64 * 32),
+    frame_buffer: [64 * 32]u8 = [_]u8{0} ** (64 * 32),
     pc: u16 = ROM_START_ADDRESS,
     i: u16 = 0,
     stack: [16]u16 = [_]u16{0} ** 16,
@@ -92,7 +92,7 @@ fn cycle() void {
         0x0000 => {
             switch (opcode) {
                 0x00E0 => { // CLS
-                    cpu.display = [_]u8{0} ** (64 * 32);
+                    cpu.frame_buffer = [_]u8{0} ** (64 * 32);
                     std.debug.print("[+] Cleared screen.\n", .{});
                 },
                 else => {
@@ -122,10 +122,10 @@ fn cycle() void {
             var screen_offset = cpu.memory[(cpu.memory.len / 2) * y_cord + x_cord]; // Sprite drawing start
             cpu.v[0xF] = 0; // Collision register
             for (0..5) |_| {
-                if (cpu.display[screen_offset] > 0) {
+                if (cpu.frame_buffer[screen_offset] > 0) {
                     cpu.v[0xF] = 1;
                 } else {
-                    cpu.display[screen_offset] = FONT_SET[cpu.i];
+                    cpu.frame_buffer[screen_offset] = FONT_SET[cpu.i];
                     cpu.i += 0x5;
                     screen_offset += 64;
                 }
