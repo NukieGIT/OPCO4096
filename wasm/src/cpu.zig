@@ -39,38 +39,42 @@ pub const Chip8CPU = struct {
         }
         std.debug.print("[+] Font set loaded!\n", .{});
     }
+
+    fn loadInstructionsIntoRAM(self: *Chip8CPU, hex: []u16) void {
+        std.debug.print("[/] Loading instructions set into RAM...\n", .{});
+        for (hex, 0..) |_, i| {
+            const value = hex[i];
+            const LSB_value: u8 = @truncate(value & 0x00FF);
+            const MSB_value: u8 = @truncate(value >> 8 & 0x00FF);
+            std.debug.print("[?] LSB: 0x{x} | MSB: 0x{x} | RAW: 0x{x}\n", .{ LSB_value, MSB_value, value });
+            self.memory[ROM_START_ADDRESS + (i * 2)] = LSB_value;
+            self.memory[ROM_START_ADDRESS + (i * 2) + 1] = MSB_value;
+        }
+        std.debug.print("[+] Instructions set loaded!\n", .{});
+    }
 };
 
 pub var cpu: Chip8CPU = Chip8CPU{};
 
 test "screen" {
-    init();
     var u16_INSTRUCTION_SET = [_]u16{ 0x00E0, 0x00E0, 0x00E0, 0x1200 };
-    loadInstructionsIntoRAM(&u16_INSTRUCTION_SET);
-    for (u16_INSTRUCTION_SET, 0..) |_, j| {
-        std.debug.print("\n[?] Current cycle: {}\n", .{j});
-        cycle();
-    }
-    for (0..16) |j| {
-        std.debug.print("HEX DUMP at 0x{x} = 0x{x}\n", .{ ROM_START_ADDRESS + j, cpu.memory[ROM_START_ADDRESS + j] });
-    }
+    const DESIRED_RUNTIME_CYCLES = 10;
+    init(&u16_INSTRUCTION_SET, DESIRED_RUNTIME_CYCLES);
 }
 
-pub fn loadInstructionsIntoRAM(hex: []u16) void {
-    for (hex, 0..) |_, i| {
-        const value = hex[i];
-        const LSB_value: u8 = @truncate(value & 0x00FF);
-        const MSB_value: u8 = @truncate(value >> 8 & 0x00FF);
-        std.debug.print("LSB: 0x{x} | MSB: 0x{x} | RAW: 0x{x}\n", .{ LSB_value, MSB_value, value });
-        cpu.memory[ROM_START_ADDRESS + (i * 2)] = LSB_value;
-        cpu.memory[ROM_START_ADDRESS + (i * 2) + 1] = MSB_value;
-    }
-}
-
-pub fn init() void {
+pub fn init(instructions: []u16, runtime_cycles: comptime_int) void {
     std.debug.print("\n[/] Initializing core...\n", .{});
     cpu.loadFontSet();
+    cpu.loadInstructionsIntoRAM(instructions);
+    for (0..16) |j| {
+        std.debug.print("[?] HEX DUMP at 0x{x} = 0x{x}\n", .{ ROM_START_ADDRESS + j, cpu.memory[ROM_START_ADDRESS + j] });
+    }
     std.debug.print("[+] Core initialized!\n", .{});
+    std.debug.print("[+++] Executing instructions set!\n\n", .{});
+    for (0..runtime_cycles) |_| {
+        cycle();
+    }
+    std.debug.print("\n\n[+++] Instructions set finish!\n[?] PC at: 0x{x}\n[?] Index register at: 0x{x}\n[?] System status: ", .{ cpu.pc, cpu.i });
 }
 
 pub fn cycle() void {
@@ -80,7 +84,6 @@ pub fn cycle() void {
     var opcode: u16 = 0;
     opcode = opcode | MSB_opcode;
     opcode = opcode << 8 | LSB_opcode;
-    std.debug.print("[?] Current instruction: 0x{x} at pc: 0x{x}\n", .{ opcode, cpu.pc });
     cpu.pc += 2;
 
     const first_nibble = opcode & 0xF000; // First hexadecimal number
@@ -96,28 +99,21 @@ pub fn cycle() void {
             switch (opcode) {
                 0x00E0 => { // CLS
                     cpu.frame_buffer = [_]u8{0} ** (64 * 32);
-                    std.debug.print("[+] Cleared screen.\n", .{});
                 },
-                else => {
-                    std.debug.print("[!!!] Invalid instruction: 0x{x}\n", .{opcode});
-                },
+                else => {},
             }
         },
         0x1000 => { // JP addr
             cpu.pc = nnn;
-            std.debug.print("[+] Set pc to 0x{x}\n", .{nnn});
         },
         0x6000 => { // LD Vx, byte
             cpu.v[x] = nn;
-            std.debug.print("[+] Put value 0x{x} to register V{x}\n", .{ nn, cpu.v[x] });
         },
         0x7000 => { // ADD Vx, byte
             cpu.v[x] += nn;
-            std.debug.print("[+] Add value 0x{x} to register V{x}\n", .{ nn, cpu.v[x] });
         },
         0xA000 => { // LD I, addr
             cpu.i = nnn;
-            std.debug.print("[+] Set index register to 0x{x}\n", .{nnn});
         },
         0xD000 => { // DRW Vx, Vy, nibble
             const x_cord = cpu.v[x] & 63; // Column
@@ -133,11 +129,7 @@ pub fn cycle() void {
                     screen_offset += 64;
                 }
             }
-            std.debug.print("[+] Draw sprite\n", .{});
         },
-        else => {
-            std.debug.print("[!!!] Invalid instruction: 0x{x}\n", .{opcode});
-        },
+        else => {},
     }
-    std.debug.print("[+] Cycle completed!\n", .{});
 }
