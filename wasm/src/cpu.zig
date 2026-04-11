@@ -90,8 +90,8 @@ pub fn cycle() void {
     const nnn = opcode & 0x0FFF; // 12-bit immediate memory address
     const nn: u8 = @truncate(opcode & 0x00FF); // 8-bit immediate number
     //const n = opcode & 0x000F;  4-bit number
-    const x = opcode & 0x0F00; // Register lookup
-    const y = opcode & 0x00F0; // Register lookup
+    const x = opcode & 0x0F00 >> 8; // Register lookup
+    const y = opcode & 0x00F0 >> 4; // Register lookup
 
     // Decode
     switch (first_nibble) {
@@ -116,17 +116,27 @@ pub fn cycle() void {
             cpu.i = nnn;
         },
         0xD000 => { // DRW Vx, Vy, nibble
-            const x_cord = cpu.v[x] & 63; // Column
-            const y_cord = cpu.v[y] & 31; // Row
-            var screen_offset = cpu.memory[(cpu.memory.len / 2) * y_cord + x_cord]; // Sprite drawing start
+            // Writing this instruction was a straight nightmare
+            const x_cord = cpu.v[x]; // Column
+            const y_cord = cpu.v[y]; // Row
+            const n = opcode & 0x000F;
             cpu.v[0xF] = 0; // Collision register
-            for (0..5) |_| {
-                if (cpu.frame_buffer[screen_offset] > 0) {
-                    cpu.v[0xF] = 1;
-                } else {
-                    cpu.frame_buffer[screen_offset] = FONT_SET[cpu.i];
-                    cpu.i += 0x5;
-                    screen_offset += 64;
+            // Y axis
+            for (0..n) |i| {
+                const byte = cpu.memory[cpu.i + i];
+                // X axis
+                for (0..8) |bit_index| {
+                    const bit = byte >> 7 - @as(u3, @intCast(bit_index)) & 0b1;
+                    if (bit == 1) {
+                        const pixel_y = (y_cord + i) % 32;
+                        const pixel_x = (x_cord + bit_index) % 64;
+                        const pixel_index = (pixel_y * 64) + pixel_x;
+
+                        if (cpu.frame_buffer[pixel_index] == 1) {
+                            cpu.v[0xF] = 1;
+                        }
+                        cpu.frame_buffer[pixel_index] ^= 1;
+                    }
                 }
             }
         },
