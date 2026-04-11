@@ -1,9 +1,9 @@
 const std = @import("std");
 
-const MEMORY_SIZE: u16 = 4096;
-const ROM_START_ADDRESS: u16 = 0x0200;
+pub const MEMORY_SIZE: u16 = 4096;
+pub const ROM_START_ADDRESS: u16 = 0x0200;
 
-const FONT_SET = [_]u8{
+pub const FONT_SET = [_]u8{
     0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
     0x20, 0x60, 0x20, 0x20, 0x70, // 1
     0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
@@ -22,7 +22,7 @@ const FONT_SET = [_]u8{
     0xF0, 0x80, 0xF0, 0x80, 0x80, // F
 };
 
-const Chip8CPU = struct {
+pub const Chip8CPU = struct {
     memory: [MEMORY_SIZE]u8 = [_]u8{0} ** MEMORY_SIZE,
     frame_buffer: [64 * 32]u8 = [_]u8{0} ** (64 * 32),
     pc: u16 = ROM_START_ADDRESS,
@@ -41,7 +41,7 @@ const Chip8CPU = struct {
     }
 };
 
-var cpu: Chip8CPU = Chip8CPU{};
+pub var cpu: Chip8CPU = Chip8CPU{};
 
 test "screen" {
     init();
@@ -64,13 +64,13 @@ test "screen" {
     }
 }
 
-fn init() void {
+pub fn init() void {
     std.debug.print("\n[/] Initializing core...\n", .{});
     cpu.loadFontSet();
     std.debug.print("[+] Core initialized!\n", .{});
 }
 
-fn cycle() void {
+pub fn cycle() void {
     // Fetch
     const LSB_opcode = cpu.memory[cpu.pc];
     const MSB_opcode = cpu.memory[cpu.pc + 1];
