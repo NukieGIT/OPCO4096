@@ -6,28 +6,27 @@
 </template>
 
 <script setup lang="ts">
+import { StringReader, StringWriter } from '@/ts/wasm/memory/string'
 import { opco } from '@/ts/wasm/OPCO4096'
 import { computed, ref } from 'vue'
-
-opco.hello_from_zig()
 
 const a = ref<number>(5)
 const b = ref<number>(3)
 
 const result = computed(() => {
-  return opco.add(a.value, b.value)
+  return a.value + b.value
 })
 
-const textencoder = new TextEncoder()
-const str = 'Hello from JavaScript'
+const sw = new StringWriter(opco.memory, opco)
+const sr = new StringReader(opco.memory)
 
-const bytes = textencoder.encode(str)
-const ptr = opco.allocate(bytes.length)
+const strData = sw.writeString("Hello, WebAssembly!")
+console.log(strData);
+console.log(sr.readString(strData));
 
-new Uint8Array(opco.memory.buffer, ptr, bytes.length).set(bytes)
 
-opco.printThing(ptr, bytes.length)
-opco.deallocate(ptr, bytes.length)
+
+
 </script>
 
 <style scoped></style>

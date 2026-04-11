@@ -8,22 +8,14 @@ const PLACEHOLDER_OBJECT_BODY = {
 }
 
 export const OPCO4096ValidationObject: OPCO4096 = {
-  add: function (_a: number, _b: number): number {
-    return PLACEHOLDER_FUNCTION_BODY()
-  },
-  hello_from_zig: function (): void {
-    PLACEHOLDER_FUNCTION_BODY()
-  },
+  memory: PLACEHOLDER_OBJECT_BODY as unknown as WebAssembly.Memory,
+
   allocate: function (_len: number): number {
     return PLACEHOLDER_FUNCTION_BODY()
   },
   deallocate: function (_ptr: number, _len: number): void {
     PLACEHOLDER_FUNCTION_BODY()
   },
-  printThing: function (_ptr: number, _len: number): void {
-    PLACEHOLDER_FUNCTION_BODY()
-  },
-  memory: PLACEHOLDER_OBJECT_BODY as unknown as WebAssembly.Memory,
 }
 
 const LOG_PREFIX = '[OPCO4096 Validator]'

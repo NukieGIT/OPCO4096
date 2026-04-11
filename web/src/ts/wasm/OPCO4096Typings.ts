@@ -1,8 +1,8 @@
-export interface OPCO4096 extends WebAssemblyDefaultExports {
-  add(a: number, b: number): number
-  hello_from_zig(): void
-  printThing(ptr: number, len: number): void
+export interface OPCO4096 extends WebAssemblyDefaultExports, WebAssemblyAllocator {
 
+}
+
+export interface WebAssemblyAllocator {
   /**
    * Allocates a buffer inside the WASM's memory.
    *
@@ -10,7 +10,6 @@ export interface OPCO4096 extends WebAssemblyDefaultExports {
    * @returns A pointer (byte offset) to the start of the allocation.
    *
    * @remarks
-   * - `len` is a byte count (for strings: use UTF-8 byte length, not JS `str.length`).
    * - The returned pointer is an offset into {@link memory}.buffer.
    * - You own the allocation and must call {@link deallocate} with the same `ptr` and `len`.
    */
