@@ -1,21 +1,29 @@
-import { MemoryReader, MemoryWriter, type u32 } from '@/ts/wasm/memory/io'
+import {
+  MemoryReader,
+  MemoryWriter,
+  type EPointer,
+  type IReader,
+  type IStructReader,
+  type IWriter,
+  type u32,
+} from '@/ts/wasm/memory/raw'
 import type { WebAssemblyAllocator } from '@/ts/wasm/OPCO4096Typings'
 
 /**
- * Represents a UTF-8 encoded string in WASM memory.
+ * String header stored in WASM memory.
+ *
+ * @remarks
+ * Memory layout (little-endian u32 fields, total 8 bytes):
+ * - `ptr`: byte offset of the UTF-8 bytes
+ * - `len`: byte length of the UTF-8 bytes
  */
-export type String = {
-  /**
-   * Pointer to the start of the UTF-8 encoded string in WASM memory.
-   */
-  ptr: u32
-  /**
-   * Length of the string in bytes.
-   */
-  len: u32
-}
+export type EString = EPointer
 
-export class StringWriter extends MemoryWriter {
+/**
+ * Writes JS strings into WASM memory as UTF-8 and returns a pointer to an
+ * {@link EString} header.
+ */
+export class StringWriter extends MemoryWriter implements IWriter<string> {
   private textEncoder: TextEncoder
 
   constructor(memory: WebAssembly.Memory, allocator: WebAssemblyAllocator) {
@@ -23,26 +31,26 @@ export class StringWriter extends MemoryWriter {
     this.textEncoder = new TextEncoder()
   }
 
-  /**
-   * Writes a string to WASM memory.
-   * @param str String to write.
-   * @returns Pointer to {@link String} struct.
-   */
-  writeString(str: string): u32 {
+  /** @inheritDoc */
+  write(str: string): u32 {
     const strBytes = this.textEncoder.encode(str)
-    const strPtr = this.write(strBytes)
+    const strPtr = this.writeRaw(strBytes)
 
     const dataView = new DataView(new ArrayBuffer(8))
     dataView.setUint32(0, strPtr, true)
     dataView.setUint32(4, strBytes.length, true)
 
-    const structPtr = this.write(new Uint8Array(dataView.buffer))
-
-    return structPtr
+    return this.writeRaw(new Uint8Array(dataView.buffer))
   }
 }
 
-export class StringReader extends MemoryReader {
+/**
+ * Reads an {@link EString} header and decodes UTF-8 bytes into a JS string.
+ */
+export class StringReader
+  extends MemoryReader
+  implements IReader<string, EString>, IStructReader<EString>
+{
   private textDecoder: TextDecoder
 
   constructor(memory: WebAssembly.Memory) {
@@ -50,16 +58,18 @@ export class StringReader extends MemoryReader {
     this.textDecoder = new TextDecoder()
   }
 
-  readString(strOrPtr: String | u32): string {
+  /** @inheritDoc */
+  read(strOrPtr: EString | u32): string {
     if (typeof strOrPtr === 'number') {
-      strOrPtr = this.getStructFromStringData(strOrPtr)
+      strOrPtr = this.readStruct(strOrPtr)
     }
 
-    const bytes = this.read(strOrPtr.ptr, strOrPtr.len)
+    const bytes = this.readRaw(strOrPtr.ptr, strOrPtr.len)
     return this.textDecoder.decode(bytes)
   }
 
-  getStructFromStringData(ptr: u32): String {
+  /** @inheritDoc */
+  readStruct(ptr: u32): EString {
     const view = new DataView(this.memory.buffer, ptr, 8)
 
     const strPtr = view.getUint32(0, true)
