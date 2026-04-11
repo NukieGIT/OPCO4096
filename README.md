@@ -37,7 +37,7 @@ Designed to bridge the gap between high-level reactive frameworks (**Vue 3**) an
 
 ## System Architecture
 - **CPU:** 8-bit Virtual Processor
-- **Memory:** 4KB RAM (Uint8Array)
+- **Memory:** 4KB 8-bit RAM (little-endian)
 - **Registers:** 16 x 8-bit General Purpose
 - **Graphics:** 64x32 Monochromatic display
 
