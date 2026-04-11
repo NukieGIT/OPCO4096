@@ -96,25 +96,25 @@ fn cycle() void {
                     std.debug.print("[+] Cleared screen.\n", .{});
                 },
                 else => {
-                    std.debug.print("[!!!] Invalid instruction: {}\n", .{opcode});
+                    std.debug.print("[!!!] Invalid instruction: 0x{x}\n", .{opcode});
                 },
             }
         },
         0x1000 => { // JP addr
             cpu.pc = nnn;
-            std.debug.print("[+] Set pc to {}\n", .{nnn});
+            std.debug.print("[+] Set pc to 0x{x}\n", .{nnn});
         },
         0x6000 => { // LD Vx, byte
             cpu.v[x] = nn;
-            std.debug.print("[+] Put value {} to register V{}\n", .{ nn, cpu.v[x] });
+            std.debug.print("[+] Put value 0x{x} to register V{x}\n", .{ nn, cpu.v[x] });
         },
         0x7000 => { // ADD Vx, byte
             cpu.v[x] += nn;
-            std.debug.print("[+] Add value {} to register V{}\n", .{ nn, cpu.v[x] });
+            std.debug.print("[+] Add value 0x{x} to register V{x}\n", .{ nn, cpu.v[x] });
         },
         0xA000 => { // LD I, addr
             cpu.i = nnn;
-            std.debug.print("[+] Set index register to {}\n", .{nnn});
+            std.debug.print("[+] Set index register to 0x{x}\n", .{nnn});
         },
         0xD000 => { // DRW Vx, Vy, nibble
             const x_cord = cpu.v[x] & 63; // Column
@@ -133,7 +133,7 @@ fn cycle() void {
             std.debug.print("[+] Draw sprite\n", .{});
         },
         else => {
-            std.debug.print("[!!!] Invalid instruction: {}\n", .{opcode});
+            std.debug.print("[!!!] Invalid instruction: 0x{x}\n", .{opcode});
         },
     }
     std.debug.print("[+] Cycle completed!\n", .{});
