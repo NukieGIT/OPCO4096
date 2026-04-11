@@ -1,7 +1,7 @@
 const std = @import("std");
 
 const MEMORY_SIZE: u16 = 4096;
-const ROM_START_ADDRESS: u16 = 0x200;
+const ROM_START_ADDRESS: u16 = 0x0200;
 
 const FONT_SET = [_]u8{
     0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
@@ -19,10 +19,10 @@ const FONT_SET = [_]u8{
     0xF0, 0x80, 0x80, 0x80, 0xF0, // C
     0xE0, 0x90, 0x90, 0x90, 0xE0, // D
     0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
-    0xF0, 0x80, 0xF0, 0x80, 0x80  // F
+    0xF0, 0x80, 0xF0, 0x80, 0x80, // F
 };
 
-const Chip8 = struct {
+const Chip8CPU = struct {
     memory: [MEMORY_SIZE]u8 = [_]u8{0} ** MEMORY_SIZE,
     display: [64 * 32]u8 = [_]u8{0} ** (64 * 32),
     pc: u16 = ROM_START_ADDRESS,
@@ -30,5 +30,91 @@ const Chip8 = struct {
     stack: [16]u16 = [_]u16{0} ** 16,
     delay_timer: u8 = 0,
     sound_timer: u8 = 0,
-    v: [16]u8 = [_]u8{0} ** 16
+    v: [16]u8 = [_]u8{0} ** 16,
+
+    fn loadFontSet(self: *Chip8CPU) void {
+        for (FONT_SET, 0..) |character, i| {
+            self.memory[i] = FONT_SET[i];
+            std.debug.print("{}\n", .{character});
+        }
+    }
 };
+
+var cpu: Chip8CPU = Chip8CPU{};
+
+test "screen" {
+    init();
+    const INSTRUCTION_SET = [_]u8{0x00E0};
+    for (INSTRUCTION_SET, 0..) |_, i| {
+        cpu.memory[ROM_START_ADDRESS + i] = INSTRUCTION_SET[i];
+    }
+    for (INSTRUCTION_SET, 0..) |_, i| {
+        std.debug.print("Cycle: {}\n", .{i});
+        cycle();
+    }
+}
+
+fn init() void {
+    std.debug.print("[/] Initializing core...\n", .{});
+    cpu.loadFontSet();
+}
+
+fn cycle() void {
+    // Fetch
+    const opcode: u16 = cpu.memory[cpu.pc];
+    cpu.pc += 2;
+
+    const first_nibble = opcode & 0xF000; // First hexadecimal number
+    const nnn = opcode & 0x0FFF; // 12-bit immediate memory address
+    const nn: u8 = @truncate(opcode & 0x00FF); // 8-bit immediate number
+    //const n = opcode & 0x000F;  4-bit number
+    const x = opcode & 0x0F00; // Register lookup
+    const y = opcode & 0x00F0; // Register lookup
+
+    std.debug.print("First nibble: {}\n", .{first_nibble});
+    // Decode
+    switch (first_nibble) {
+        0x0000 => {
+            switch (opcode) {
+                0x00E0 => { // CLS
+                    cpu.display = [_]u8{0} ** (64 * 32);
+                    std.debug.print("[+] Cleared screen.\n", .{});
+                },
+                else => {
+                    std.debug.print("[-] Invalid instruction: {}\n", .{opcode});
+                },
+            }
+        },
+        0x1000 => { // JP addr
+            cpu.pc = nnn;
+            std.debug.print("[+] Set pc to {}\n", .{nnn});
+        },
+        0x6000 => { // LD Vx, byte
+            cpu.v[x] = nn;
+        },
+        0x7000 => { // ADD Vx, byte
+            cpu.v[x] += nn;
+        },
+        0xA000 => { // LD I, addr
+            cpu.i = nnn;
+        },
+        0xD000 => { // DRW Vx, Vy, nibble
+            const x_cord = cpu.v[x] & 63; // Column
+            const y_cord = cpu.v[y] & 31; // Row
+            var screen_offset = cpu.memory[(cpu.memory.len / 2) * y_cord + x_cord]; // Sprite drawing start
+            cpu.v[0xF] = 0; // Collision register
+            for (0..5) |_| {
+                if (cpu.display[screen_offset] > 0) {
+                    cpu.v[0xF] = 1;
+                } else {
+                    cpu.display[screen_offset] = FONT_SET[cpu.i];
+                    cpu.i += 0x5;
+                    screen_offset += 64;
+                }
+            }
+        },
+        else => {
+            std.debug.print("PANIK", .{});
+        },
+    }
+}
