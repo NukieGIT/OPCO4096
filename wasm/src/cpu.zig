@@ -45,13 +45,22 @@ var cpu: Chip8CPU = Chip8CPU{};
 
 test "screen" {
     init();
-    const INSTRUCTION_SET = [_]u8{0x00E0};
-    for (INSTRUCTION_SET, 0..) |_, i| {
-        cpu.memory[ROM_START_ADDRESS + i] = INSTRUCTION_SET[i];
+    const u16_INSTRUCTION_SET = [_]u16{ 0x00E0, 0x00E0, 0x00E0, 0x1200 };
+    // const u8_INSTRUCTION_SET = [_]u8{};
+    for (u16_INSTRUCTION_SET, 0..) |_, i| {
+        const value = u16_INSTRUCTION_SET[i];
+        const LSB_value: u8 = @truncate(value & 0x00FF);
+        const MSB_value: u8 = @truncate(value >> 8 & 0x00FF);
+        std.debug.print("LSB: 0x{x} | MSB: 0x{x} | RAW: 0x{x}\n", .{ LSB_value, MSB_value, value });
+        cpu.memory[ROM_START_ADDRESS + (i * 2)] = LSB_value;
+        cpu.memory[ROM_START_ADDRESS + (i * 2) + 1] = MSB_value;
     }
-    for (INSTRUCTION_SET, 0..) |_, i| {
-        std.debug.print("\n[?] Current cycle: {}\n", .{i});
+    for (u16_INSTRUCTION_SET, 0..) |_, j| {
+        std.debug.print("\n[?] Current cycle: {}\n", .{j});
         cycle();
+    }
+    for (0..16) |j| {
+        std.debug.print("HEX DUMP at 0x{x} = 0x{x}\n", .{ ROM_START_ADDRESS + j, cpu.memory[ROM_START_ADDRESS + j] });
     }
 }
 
@@ -63,7 +72,11 @@ fn init() void {
 
 fn cycle() void {
     // Fetch
-    const opcode: u16 = cpu.memory[cpu.pc];
+    const LSB_opcode = cpu.memory[cpu.pc];
+    const MSB_opcode = cpu.memory[cpu.pc + 1];
+    var opcode: u16 = 0;
+    opcode = opcode | MSB_opcode;
+    opcode = opcode << 8 | LSB_opcode;
     std.debug.print("[?] Current instruction: 0x{x} at pc: 0x{x}\n", .{ opcode, cpu.pc });
     cpu.pc += 2;
 
