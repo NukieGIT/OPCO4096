@@ -54,8 +54,7 @@ pub const Chip8CPU = struct {
     fn loadInstructions(self: *Chip8CPU, hex: []u16) void {
         std.debug.print("[/] Loading instructions set into RAM...\n", .{});
 
-        for (hex, 0..) |_, i| {
-            const value = hex[i];
+        for (hex, 0..) |value, i| {
             const LSB_value: u8 = @truncate(value & 0x00FF);
             const MSB_value: u8 = @truncate(value >> 8 & 0x00FF);
             std.debug.print("[?] LSB: 0x{x} | MSB: 0x{x} | RAW: 0x{x}\n", .{ LSB_value, MSB_value, value });
