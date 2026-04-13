@@ -90,14 +90,14 @@ pub fn init(instructions: []u16, runtime_cycles: comptime_int) void {
     std.debug.print("[+++] Executing instructions set!\n\n", .{});
 
     for (0..runtime_cycles) |_| {
-        cycle();
+        tick();
     }
 
     std.debug.print("\n\n[+++] Instructions set finish!\n[?] PC at: 0x{x}\n[?] Index register at: 0x{x}\n[?] System status: ", .{ cpu.pc, cpu.i });
 }
 
 /// The fetch, decode and execute cycle
-pub fn cycle() void {
+pub fn tick() void {
     // Fetch
 
     // Load the instruction in big-endian
