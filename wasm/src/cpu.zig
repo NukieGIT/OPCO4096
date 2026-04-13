@@ -51,36 +51,37 @@ pub const Chip8CPU = struct {
     }
 
     /// Loads the instructions into ram using big-endian.
-    fn loadInstructions(self: *Chip8CPU, hex: []u16) void {
+    fn loadInstructions(self: *Chip8CPU) !void {
         std.debug.print("[/] Loading instructions set into RAM...\n", .{});
 
-        for (hex, 0..) |value, i| {
-            const LSB_value: u8 = @truncate(value & 0x00FF);
-            const MSB_value: u8 = @truncate(value >> 8 & 0x00FF);
-            std.debug.print("[?] LSB: 0x{x} | MSB: 0x{x} | RAW: 0x{x}\n", .{ LSB_value, MSB_value, value });
-            // Saving instructions in big-endian
-            self.memory[ROM_START_ADDRESS + (i * 2)] = MSB_value;
-            self.memory[ROM_START_ADDRESS + (i * 2) + 1] = LSB_value;
-        }
+        const allocator = std.heap.page_allocator;
 
-        std.debug.print("[+] Instructions set loaded!\n", .{});
+        const file = try std.fs.cwd().openFile("../IBM Logo.ch8", .{});
+        defer file.close();
+
+        const data = try file.readToEndAlloc(allocator, 1024 * 1024);
+        defer allocator.free(data);
+
+        for (data, 0..) |byte, i| {
+            self.memory[ROM_START_ADDRESS + i] = byte;
+            std.debug.print("0x{x:0>2} ", .{byte});
+        }
+        std.debug.print("\n", .{});
     }
 };
 
 pub var cpu: Chip8CPU = Chip8CPU{};
 
-test "instructions" {
-    var u16_INSTRUCTION_SET = [_]u16{ 0x00E0, 0x00E0, 0x00E0, 0x1200 };
-    const DESIRED_RUNTIME_CYCLES = 10;
-    init(&u16_INSTRUCTION_SET, DESIRED_RUNTIME_CYCLES);
+test "instruction loading" {
+    try cpu.loadInstructions();
 }
 
 /// Loads the font set and instructions into RAM and starts executing given amount of cycles.
-pub fn init(instructions: []u16, runtime_cycles: comptime_int) void {
+pub fn init(runtime_cycles: comptime_int) !void {
     std.debug.print("\n[/] Initializing core...\n", .{});
 
     cpu.loadFontSet();
-    cpu.loadInstructions(instructions);
+    try cpu.loadInstructions();
 
     for (0..16) |j| {
         std.debug.print("[?] HEX DUMP at 0x{x} = 0x{x}\n", .{ ROM_START_ADDRESS + j, cpu.memory[ROM_START_ADDRESS + j] });
