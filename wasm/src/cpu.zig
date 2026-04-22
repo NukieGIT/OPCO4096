@@ -65,6 +65,11 @@ pub const Chip8CPU = struct {
 
         std.debug.print("[+] Instructions set loaded!\n", .{});
     }
+
+    /// Returns the pointer of the frame_buffer array
+    pub fn getFramebufferPtr(self: *Chip8CPU) [*]u8 {
+        return &self.frame_buffer;
+    }
 };
 
 pub var cpu: Chip8CPU = Chip8CPU{};

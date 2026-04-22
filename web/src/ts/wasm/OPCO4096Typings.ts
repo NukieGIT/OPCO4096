@@ -24,4 +24,5 @@ export interface WebAssemblyAllocator {
 
 interface WebAssemblyDefaultExports {
   memory: WebAssembly.Memory
+  getFramebuffer(): number;
 }

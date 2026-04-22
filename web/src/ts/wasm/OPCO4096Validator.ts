@@ -16,6 +16,10 @@ export const OPCO4096ValidationObject: OPCO4096 = {
   deallocate: function (_ptr: number, _len: number): void {
     PLACEHOLDER_FUNCTION_BODY()
   },
+
+  getFramebuffer: function (): number {
+    return PLACEHOLDER_FUNCTION_BODY()
+  },
 }
 
 const LOG_PREFIX = '[OPCO4096 Validator]'

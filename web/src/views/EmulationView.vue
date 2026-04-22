@@ -31,6 +31,12 @@ const ar = new ArrayReader(opco.memory)
 const arrData = aw.write({ type: ArrayType.I32, data: new Int32Array([1, 2, 3]) })
 console.log(arrData)
 console.log(ar.read(arrData))
+
+const fbPtr = opco.getFramebuffer(); 
+const fbData = ar.read(fbPtr);
+
+console.log(fbData);
+
 </script>
 
 <style scoped></style>
