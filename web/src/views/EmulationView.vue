@@ -1,69 +1,165 @@
 <template>
-  <h1>Emulation Page</h1>
-  <p>{{ a }} + {{ b }} = {{ result }}</p>
-  <input type="number" v-model="a" />
-  <input type="number" v-model="b" />
+  <div class="layout">
+    <div class="left-panel">
+      <h1>CHIP-8 Upscaled Resolution Test</h1>
+
+      <canvas
+        ref="canvasRef"
+        width="64"
+        height="32"
+        style="
+          width:640px;
+          height:320px;
+          border:1px solid white;
+          background:black;
+          image-rendering: pixelated;
+        "
+      ></canvas>
+    </div>
+
+    <div class="right-panel">
+      <h2>ROM Hex Dump</h2>
+
+      <div class="hex-grid">
+        <span
+          v-for="(value, index) in hexDump"
+          :key="index"
+          class="hex-cell"
+        >
+          {{ value }}
+        </span>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ArrayReader, ArrayType, ArrayWriter } from '@/ts/wasm/memory/array'
-import { StringReader, StringWriter } from '@/ts/wasm/memory/string'
+import { ref, onMounted, computed } from 'vue'
 import { initialize, opco } from '@/ts/wasm/OPCO4096'
-import { computed, ref } from 'vue'
 
-const a = ref<number>(5)
-const b = ref<number>(3)
+initialize()
 
-const result = computed(() => {
-  return a.value + b.value
+const canvasRef = ref<HTMLCanvasElement | null>(null)
+
+const WIDTH = 64
+const HEIGHT = 32
+
+const instructions = [
+  0x6002,
+  0x6102,
+  0xA032,
+  0xD015,
+
+  0x600A,
+  0x610A,
+  0xA037,
+  0xD015,
+
+  0x6012,
+  0x6112,
+  0xA03C,
+  0xD015,
+
+  0x121A
+]
+
+const rom = new Uint16Array(instructions)
+
+// TODO load instructions using CPU instance method in Zig
+const mem = new Uint16Array(opco.memory.buffer)
+mem.set(rom, 0x200 / 2)
+
+opco.initializeCpu(0x200, rom.length, 13)
+
+const hexDump = computed(() => {
+  const values: string[] = []
+
+  for (let i = 0; i < rom.length; i++) {
+    values.push(rom[i].toString(16).toUpperCase().padStart(4, '0'))
+  }
+
+  return values
 })
 
-const sw = new StringWriter(opco.memory, opco)
-const sr = new StringReader(opco.memory)
+onMounted(() => {
+  const canvas = canvasRef.value
+  if (!canvas) return
 
-const strData = sw.write('Hello, WebAssembly!')
-console.log(strData)
-console.log(sr.read(strData))
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return
 
-const aw = new ArrayWriter(opco.memory, opco)
-const ar = new ArrayReader(opco.memory)
+  const image = ctx.createImageData(WIDTH, HEIGHT)
+  const pixels = image.data
 
-const arrData = aw.write({ type: ArrayType.I32, data: new Int32Array([1, 2, 3]) })
-console.log(arrData)
-console.log(ar.read(arrData))
+  const draw = () => {
+    const fbPtr = opco.getFramebuffer()
+    const header = new DataView(opco.memory.buffer, fbPtr, 12)
 
-const fbPtr = opco.getFramebuffer(); 
-const fbData = ar.read(fbPtr);
+    const ptr = header.getUint32(0, true)
+    const len = header.getUint32(4, true)
 
-console.log(fbData);
+    const fb = new Uint8Array(opco.memory.buffer, ptr, len)
 
-    var instructions = [
-        // Address 0x200
-        0x6002, // LD V0, 2     (Set X coordinate for 'A')
-        0x6102, // LD V1, 2     (Set Y coordinate for 'A')
-        0xA032, // LD I, 0x032  (Point to 'A' in the font set)
-        0xD015, // DRW V0, V1, 5 (Draw 'A')
-        0x600A, // LD V0, 10    (Set X coordinate for 'B')
-        0x610A, // LD V1, 10    (Set Y coordinate for 'B')
-        0xA037, // LD I, 0x037  (Point to 'B' in the font set)
-        0xD015, // DRW V0, V1, 5 (Draw 'B')i.ini
-        0x6012, // LD V0, 18    (Set X coordinate for 'C')
-        0x6112, // LD V1, 18    (Set Y coordinate for 'C')
-        0xA03C, // LD I, 0x03C  (Point to 'C' in the font set)
-        0xD015, // DRW V0, V1, 5 (Draw 'C')
-        0x121A, // JP 0x21A    (Infinite loop at the end)
-    ];
-const data = new Uint16Array(instructions);
+    for (let i = 0; i < WIDTH * HEIGHT; i++) {
+      const on = fb[i] === 1
+      const p = i * 4
 
-const ptr = 0; 
+      const c = on ? 255 : 0
 
-const mem = new Uint16Array(opco.memory.buffer);
-mem.set(data, ptr);
+      pixels[p] = c
+      pixels[p + 1] = c
+      pixels[p + 2] = c
+      pixels[p + 3] = 255
+    }
 
-opco.initializeCpu(ptr * 2, data.length, 13);
+    ctx.putImageData(image, 0, 0)
 
-console.log(fbData);
+    requestAnimationFrame(draw)
+  }
 
+  draw()
+})
 </script>
 
-<style scoped></style>
+<style scoped>
+.layout {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.left-panel {
+  flex: 1;
+}
+
+.right-panel {
+  width: 320px;
+  border: 1px solid white;
+  padding: 12px;
+  background: #111;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+h1,
+h2 {
+  color: white;
+  margin-bottom: 10px;
+}
+
+.hex-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.hex-cell {
+  color: #00ff88;
+  font-family: monospace;
+  font-size: 14px;
+  padding: 4px;
+  background: #1b1b1b;
+  text-align: center;
+  border-radius: 4px;
+}
+</style>
