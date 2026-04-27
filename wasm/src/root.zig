@@ -21,9 +21,13 @@ var fb_header = WasmArrayHeader{
     .type = 0,
 };
 
-// TODO make functions in cpu.zig use the struct itself instead of an instance created in cpu.zig (otherwise WASM and Zig are using 2 different instances)
 export fn getFramebuffer() *WasmArrayHeader {
     fb_header.ptr = cpu_mod.Chip8CPU.getFramebufferPtr(&cpu_instance);
 
     return &fb_header;
+}
+
+export fn initializeCpu(ptr: [*]u16, len: u32, runtime_cycles: u32) void {
+    const instructions = ptr[0..len];
+    cpu_instance.init(instructions, runtime_cycles);
 }

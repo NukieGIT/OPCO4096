@@ -20,6 +20,10 @@ export const OPCO4096ValidationObject: OPCO4096 = {
   getFramebuffer: function (): number {
     return PLACEHOLDER_FUNCTION_BODY()
   },
+
+  initializeCpu: function (): number {
+    return PLACEHOLDER_FUNCTION_BODY()
+  },
 }
 
 const LOG_PREFIX = '[OPCO4096 Validator]'

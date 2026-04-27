@@ -25,4 +25,5 @@ export interface WebAssemblyAllocator {
 interface WebAssemblyDefaultExports {
   memory: WebAssembly.Memory
   getFramebuffer(): number;
+  initializeCpu(ptr: number, len: number, runtime_cycles: number): void;
 }
