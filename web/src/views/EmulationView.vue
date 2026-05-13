@@ -34,7 +34,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { initialize, opco } from '@/ts/wasm/OPCO4096'
 
 initialize()
@@ -81,6 +81,8 @@ const hexDump = computed(() => {
   return values
 })
 
+let frameId: number
+
 onMounted(() => {
   const canvas = canvasRef.value
   if (!canvas) return
@@ -92,33 +94,41 @@ onMounted(() => {
   const pixels = image.data
 
   const draw = () => {
-    const fbPtr = opco.getFramebuffer()
-    const header = new DataView(opco.memory.buffer, fbPtr, 12)
+    try {
+      const fbPtr = opco.getFramebuffer()
+      const header = new DataView(opco.memory.buffer, fbPtr, 12)
 
-    const ptr = header.getUint32(0, true)
-    const len = header.getUint32(4, true)
+      const ptr = header.getUint32(0, true)
+      const len = header.getUint32(4, true)
 
-    const fb = new Uint8Array(opco.memory.buffer, ptr, len)
+      const fb = new Uint8Array(opco.memory.buffer, ptr, len)
 
-    for (let i = 0; i < WIDTH * HEIGHT; i++) {
-      const on = fb[i] === 1
-      const p = i * 4
+      for (let i = 0; i < WIDTH * HEIGHT; i++) {
+        const on = fb[i] === 1
+        const p = i * 4
 
-      const c = on ? 255 : 0
+        const c = on ? 255 : 0
 
-      pixels[p] = c
-      pixels[p + 1] = c
-      pixels[p + 2] = c
-      pixels[p + 3] = 255
+        pixels[p] = c
+        pixels[p + 1] = c
+        pixels[p + 2] = c
+        pixels[p + 3] = 255
+      }
+
+      ctx.putImageData(image, 0, 0)
+
+    } catch (error) {
+      console.error('Error rendering frame:', error)
+      return
     }
 
-    ctx.putImageData(image, 0, 0)
-
-    requestAnimationFrame(draw)
+    frameId = requestAnimationFrame(draw)
   }
 
   draw()
 })
+
+onUnmounted(() => cancelAnimationFrame(frameId))
 </script>
 
 <style scoped>
