@@ -69,7 +69,6 @@ const instructions = [
 
 const rom = new Uint16Array(instructions)
 
-// TODO load instructions using CPU instance method in Zig
 const mem = new Uint16Array(opco.memory.buffer)
 mem.set(rom, ROM_START_ADDRESS / 2)
 
