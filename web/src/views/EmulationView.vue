@@ -43,6 +43,10 @@ const canvasRef = ref<HTMLCanvasElement | null>(null)
 
 const WIDTH = 64
 const HEIGHT = 32
+const ROM_START_ADDRESS = 0x200
+const BYTES_PER_PIXEL = 4; // RGBA
+const COLOR_WHITE = 255;
+const WASM_HEADER_SIZE = 12; // Size of the Zig framebuffer header
 
 const instructions = [
   0x6002,
@@ -67,15 +71,15 @@ const rom = new Uint16Array(instructions)
 
 // TODO load instructions using CPU instance method in Zig
 const mem = new Uint16Array(opco.memory.buffer)
-mem.set(rom, 0x200 / 2)
+mem.set(rom, ROM_START_ADDRESS / 2)
 
-opco.initializeCpu(0x200, rom.length, 13)
+opco.initializeCpu(ROM_START_ADDRESS, rom.length, instructions.length)
 
 const hexDump = computed(() => {
   const values: string[] = []
 
   for (let i = 0; i < rom.length; i++) {
-    values.push(rom[i].toString(16).toUpperCase().padStart(4, '0'))
+    values.push(rom[i].toString(16).toUpperCase().padStart(BYTES_PER_PIXEL, '0'))
   }
 
   return values
@@ -96,7 +100,7 @@ onMounted(() => {
   const draw = () => {
     try {
       const fbPtr = opco.getFramebuffer()
-      const header = new DataView(opco.memory.buffer, fbPtr, 12)
+      const header = new DataView(opco.memory.buffer, fbPtr, WASM_HEADER_SIZE)
 
       const ptr = header.getUint32(0, true)
       const len = header.getUint32(4, true)
@@ -107,12 +111,12 @@ onMounted(() => {
         const on = fb[i] === 1
         const p = i * 4
 
-        const c = on ? 255 : 0
+        const c = on ? COLOR_WHITE : 0
 
         pixels[p] = c
         pixels[p + 1] = c
         pixels[p + 2] = c
-        pixels[p + 3] = 255
+        pixels[p + 3] = COLOR_WHITE
       }
 
       ctx.putImageData(image, 0, 0)
