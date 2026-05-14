@@ -36,6 +36,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { initialize, opco } from '@/ts/wasm/OPCO4096'
+import { ArrayReader, ArrayType, ArrayWriter } from '@/ts/wasm/memory/array'
 
 initialize()
 
@@ -43,10 +44,8 @@ const canvasRef = ref<HTMLCanvasElement | null>(null)
 
 const WIDTH = 64
 const HEIGHT = 32
-const ROM_START_ADDRESS = 0x200
 const BYTES_PER_PIXEL = 4; // RGBA
 const COLOR_WHITE = 255;
-const WASM_HEADER_SIZE = 12; // Size of the Zig framebuffer header
 
 const instructions = [
   0x6002,
@@ -67,12 +66,15 @@ const instructions = [
   0x121A
 ]
 
+const aw = new ArrayWriter(opco.memory, opco)
+const ar = new ArrayReader(opco.memory)
+
 const rom = new Uint16Array(instructions)
 
-const mem = new Uint16Array(opco.memory.buffer)
-mem.set(rom, ROM_START_ADDRESS / 2)
+const arrData = aw.write({type: ArrayType.U16, data: rom})
+const arrReader = ar.readStruct(arrData)
 
-opco.initializeCpu(ROM_START_ADDRESS, rom.length, instructions.length)
+opco.initializeCpu(arrReader.ptr, arrReader.len, instructions.length)
 
 const hexDump = computed(() => {
   const values: string[] = []
@@ -99,15 +101,10 @@ onMounted(() => {
   const draw = () => {
     try {
       const fbPtr = opco.getFramebuffer()
-      const header = new DataView(opco.memory.buffer, fbPtr, WASM_HEADER_SIZE)
-
-      const ptr = header.getUint32(0, true)
-      const len = header.getUint32(4, true)
-
-      const fb = new Uint8Array(opco.memory.buffer, ptr, len)
+      const fbData = ar.read(fbPtr)
 
       for (let i = 0; i < WIDTH * HEIGHT; i++) {
-        const on = fb[i] === 1
+        const on = fbData.data[i] === 1
         const p = i * 4
 
         const c = on ? COLOR_WHITE : 0
