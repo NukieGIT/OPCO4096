@@ -14,7 +14,7 @@ Designed to bridge the gap between high-level reactive frameworks (**Vue 3**) an
 
 ### Prerequisites
 * [Node.js](https://nodejs.org/) (latest LTS recommended)
-* [Zig](https://ziglang.org/) (latest LTS recommended)
+* [Zig](https://ziglang.org/) (0.15.2 recommended)
 
 ### Running the project
 
