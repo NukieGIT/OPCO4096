@@ -1,4 +1,4 @@
-export interface OPCO4096 extends WebAssemblyDefaultExports, WebAssemblyAllocator {}
+export interface OPCO4096 extends WebAssemblyDefaultExports, WebAssemblyAllocator, WasmOpcoCpu {}
 
 export interface WebAssemblyAllocator {
   /**
@@ -24,6 +24,9 @@ export interface WebAssemblyAllocator {
 
 interface WebAssemblyDefaultExports {
   memory: WebAssembly.Memory
+}
+
+export interface WasmOpcoCpu {
   getFramebuffer(): number;
   initializeCpu(ptr: number, len: number, runtime_cycles: number): void;
 }
