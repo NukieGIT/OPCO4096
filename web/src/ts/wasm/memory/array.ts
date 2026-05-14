@@ -17,6 +17,7 @@ import type { WebAssemblyAllocator } from '@/ts/wasm/OPCO4096Typings'
  */
 export enum ArrayType {
   U8,
+  U16,
   I32,
   I64,
   F32,
@@ -45,6 +46,7 @@ export type EArray = EPointer & {
  */
 export type WasmArray =
   | { type: ArrayType.U8; data: Uint8Array }
+  | { type: ArrayType.U16; data: Uint16Array }
   | { type: ArrayType.I32; data: Int32Array }
   | { type: ArrayType.I64; data: BigInt64Array }
   | { type: ArrayType.F32; data: Float32Array }
@@ -97,6 +99,11 @@ export class ArrayReader
         return {
           type: ArrayType.U8,
           data: bytes
+        }
+      case ArrayType.U16:
+        return {
+          type: ArrayType.U16,
+          data: new Uint16Array(bytes.buffer, bytes.byteOffset, bytes.byteLength / 2)
         }
       case ArrayType.I32:
         return {
