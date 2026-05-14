@@ -16,10 +16,11 @@ import type { WebAssemblyAllocator } from '@/ts/wasm/OPCO4096Typings'
  * These are *tags*, not a bitmask to be combined.
  */
 export enum ArrayType {
-  I32 = 0,
-  I64 = 1 << 1,
-  F32 = 1 << 2,
-  F64 = 1 << 3,
+  U8,
+  I32,
+  I64,
+  F32,
+  F64
 }
 
 /**
@@ -43,6 +44,7 @@ export type EArray = EPointer & {
  *   1) the element buffer (`data`), 2) the 12-byte {@link EArray} header.
  */
 export type WasmArray =
+  | { type: ArrayType.U8; data: Uint8Array }
   | { type: ArrayType.I32; data: Int32Array }
   | { type: ArrayType.I64; data: BigInt64Array }
   | { type: ArrayType.F32; data: Float32Array }
@@ -91,6 +93,11 @@ export class ArrayReader
 
     const bytes = this.readRaw(arrOrPtr.ptr, arrOrPtr.len)
     switch (arrOrPtr.type) {
+      case ArrayType.U8:
+        return {
+          type: ArrayType.U8,
+          data: bytes
+        }
       case ArrayType.I32:
         return {
           type: ArrayType.I32,

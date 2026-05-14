@@ -15,12 +15,7 @@ pub const StringData = struct {
     }
 };
 
-pub const ArrayType = enum(u32) {
-  I32 = 0,
-  I64 = 1 << 1,
-  F32 = 1 << 2,
-  F64 = 1 << 3,
-};
+pub const ArrayType = enum(u32) { U8, I32, I64, F32, F64 };
 
 pub const ArrayData = struct {
     ptr: [*]const u8,
@@ -31,7 +26,7 @@ pub const ArrayData = struct {
         return .{ .ptr = ptr, .len = len, .arrType = arrType };
     }
 
-    pub fn create(a: std.mem.Allocator, ptr: [*]const u8, len: usize, arrType: ArrayType) !*ArrayData {
+    pub fn create(a: std.mem.Allocator, ptr: [*]const u8, len: usize, arrType: ArrayType) error{OutOfMemory}!*ArrayData {
         const data = try a.create(ArrayData);
         data.* = init(ptr, len, arrType);
         return data;
