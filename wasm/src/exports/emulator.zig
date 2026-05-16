@@ -12,3 +12,7 @@ pub export fn initializeCpu(instructions_ptr: [*]u16, instructions_len: u32) voi
     const instructions = instructions_ptr[0..instructions_len];
     cpu_instance.init(instructions);
 }
+
+pub export fn tickCpu() void {
+    cpu_instance.tick();
+}
