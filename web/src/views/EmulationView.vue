@@ -85,7 +85,12 @@ const hexDump = computed(() => {
   const values: string[] = []
 
   for (let i = 0; i < rom.length; i++) {
-    values.push(rom[i].toString(16).toUpperCase().padStart(BYTES_PER_PIXEL, '0'))
+    const item = rom[i]
+    if (typeof item === 'number') {
+      values.push(item.toString(16).toUpperCase().padStart(BYTES_PER_PIXEL, '0'))
+    } else {
+      values.push('0000')
+    }
   }
 
   return values
