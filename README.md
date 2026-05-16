@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="http://gitea.lan:3000/Noworlax/OPCO4096/actions/workflows/build-and-test.yaml/badge.svg?branch=main" alt="CI Status" />
+<img src="http://gitea.lan/Noworlax/OPCO4096/actions/workflows/build-and-test.yaml/badge.svg?branch=main" alt="CI Status" />
 
 </div>
 <h1 align="center">
