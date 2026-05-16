@@ -24,8 +24,11 @@ export const OPCO4096ValidationObject: OPCO4096 = {
   initializeCpu: function (): number {
     return PLACEHOLDER_FUNCTION_BODY()
   },
-
   tickCpu: function (): number {
+    return PLACEHOLDER_FUNCTION_BODY()
+  },
+
+  getPC: function (): number {
     return PLACEHOLDER_FUNCTION_BODY()
   }
 }

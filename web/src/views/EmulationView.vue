@@ -24,7 +24,7 @@
         <span
           v-for="(value, index) in hexDump"
           :key="index"
-          class="hex-cell"
+          :class="['hex-cell', { active: index === currentRomIndex } ]"
         >
           {{ value }}
         </span>
@@ -76,16 +76,14 @@ const romReader = ar.readStruct(romData)
 
 opco.initializeCpu(romReader.ptr, romReader.len)
 
-const RUN_CYCLES = 4
+const currentRomIndex = ref(0)
 
-for (let i = 0; i < RUN_CYCLES; i++) {
-  opco.tickCpu();
-}
+const instructionsPerSecond = 1 // overall CPU instruction rate (typical CHIP-8 ~400-700)
 
 const hexDump = computed(() => {
   const values: string[] = []
 
-  for (let i = 0; i < RUN_CYCLES; i++) {
+  for (let i = 0; i < rom.length; i++) {
     values.push(rom[i].toString(16).toUpperCase().padStart(BYTES_PER_PIXEL, '0'))
   }
 
@@ -104,8 +102,27 @@ onMounted(() => {
   const image = ctx.createImageData(WIDTH, HEIGHT)
   const pixels = image.data
 
-  const draw = () => {
+  let lastTime = performance.now()
+  let instrAccumulator = 0
+
+  const draw = (now = performance.now()) => {
     try {
+      const delta = now - lastTime
+      lastTime = now
+
+      instrAccumulator += (instructionsPerSecond * delta) / 1000
+      const toRun = Math.floor(instrAccumulator)
+      if (toRun > 0) {
+        instrAccumulator -= toRun
+        for (let i = 0; i < toRun; i++) {
+          opco.tickCpu()
+        }
+        if (typeof opco.getPC === 'function') {
+          const pc = opco.getPC()
+          currentRomIndex.value = Math.max(0, Math.min(rom.length - 1, Math.floor((pc - 0x200) / 2)))
+        }
+      }
+
       const fbPtr = opco.getFramebuffer()
       const fbData = ar.read(fbPtr)
 
@@ -177,5 +194,11 @@ h2 {
   background: #1b1b1b;
   text-align: center;
   border-radius: 4px;
+}
+
+.hex-cell.active {
+  background: #00ff88;
+  color: #08120c;
+  font-weight: 700;
 }
 </style>

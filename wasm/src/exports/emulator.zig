@@ -16,3 +16,7 @@ pub export fn initializeCpu(instructions_ptr: [*]u16, instructions_len: u32) voi
 pub export fn tickCpu() void {
     cpu_instance.tick();
 }
+
+pub export fn getPC() u16 {
+    return cpu_instance.pc;
+}

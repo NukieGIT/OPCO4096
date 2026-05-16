@@ -30,4 +30,5 @@ export interface WasmOpcoCpu {
   getFramebuffer(): number;
   initializeCpu(instructions_ptr: number, instructions_len: number): void;
   tickCpu(): void;
+  getPC(): number;
 }
