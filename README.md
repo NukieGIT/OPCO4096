@@ -1,3 +1,8 @@
+<div align="center">
+
+![CI Status](http://gitea.lan:3000/api/v1/repos/Noworlax/OPCO4096/badges/workflows/build-and-test.yaml/status.svg)
+
+</div>
 <h1 align="center">
 <br>
 <img src="web/src/assets/svg/logo.svg" align="center">
