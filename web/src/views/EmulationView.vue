@@ -48,6 +48,7 @@ const BYTES_PER_PIXEL = 4; // RGBA
 const COLOR_WHITE = 255;
 
 const instructions = [
+  0x00E0,
   0x6002,
   0x6102,
   0xA032,
@@ -63,7 +64,7 @@ const instructions = [
   0xA03C,
   0xD015,
 
-  0x121A
+  0x1200
 ]
 
 const aw = new ArrayWriter(opco.memory, opco)
@@ -78,7 +79,7 @@ opco.initializeCpu(romReader.ptr, romReader.len)
 
 const currentRomIndex = ref(0)
 
-const instructionsPerSecond = 1 // overall CPU instruction rate (typical CHIP-8 ~400-700)
+const instructionsPerSecond = 100 // overall CPU instruction rate (typical CHIP-8 ~400-700)
 
 const hexDump = computed(() => {
   const values: string[] = []
