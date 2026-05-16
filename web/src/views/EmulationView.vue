@@ -71,10 +71,10 @@ const ar = new ArrayReader(opco.memory)
 
 const rom = new Uint16Array(instructions)
 
-const arrData = aw.write({type: ArrayType.U16, data: rom})
-const arrReader = ar.readStruct(arrData)
+const romData = aw.write({type: ArrayType.U16, data: rom})
+const romReader = ar.readStruct(romData)
 
-opco.initializeCpu(arrReader.ptr, arrReader.len, instructions.length)
+opco.initializeCpu(romReader.ptr, romReader.len, instructions.length)
 
 const hexDump = computed(() => {
   const values: string[] = []
