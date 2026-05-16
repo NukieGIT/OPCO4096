@@ -76,10 +76,16 @@ const romReader = ar.readStruct(romData)
 
 opco.initializeCpu(romReader.ptr, romReader.len)
 
+const RUN_CYCLES = 4
+
+for (let i = 0; i < RUN_CYCLES; i++) {
+  opco.tickCpu();
+}
+
 const hexDump = computed(() => {
   const values: string[] = []
 
-  for (let i = 0; i < rom.length; i++) {
+  for (let i = 0; i < RUN_CYCLES; i++) {
     values.push(rom[i].toString(16).toUpperCase().padStart(BYTES_PER_PIXEL, '0'))
   }
 
