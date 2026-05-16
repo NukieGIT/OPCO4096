@@ -8,7 +8,7 @@ pub export fn getFramebuffer() *types.ArrayData {
     return types.ArrayData.create(alloc.getAllocator(), cpu_instance.getFramebufferPtr(), 64 * 32, types.ArrayType.U8) catch @panic("GetFrameBuffer failed!");
 }
 
-pub export fn initializeCpu(ptr: [*]u16, len: u32, runtime_cycles: u32) void {
-    const instructions = ptr[0..len];
-    cpu_instance.init(instructions, runtime_cycles);
+pub export fn initializeCpu(instructions_ptr: [*]u16, instructions_len: u32) void {
+    const instructions = instructions_ptr[0..instructions_len];
+    cpu_instance.init(instructions);
 }

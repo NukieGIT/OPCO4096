@@ -62,14 +62,10 @@ pub const Chip8CPU = struct {
         return &self.frame_buffer;
     }
 
-    /// Loads the font set and instructions into RAM and starts executing given amount of cycles.
-    pub fn init(self: *Chip8CPU, instructions: []u16, runtime_cycles: u32) void {
+    /// Loads the font set and instructions into RAM.
+    pub fn init(self: *Chip8CPU, instructions: []u16) void {
         self.loadFontSet();
         self.loadInstructions(instructions);
-
-        for (0..runtime_cycles) |_| {
-            tick(self);
-        }
     }
 
     /// The fetch, decode and execute cycle

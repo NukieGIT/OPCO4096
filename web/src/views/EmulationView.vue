@@ -74,7 +74,7 @@ const rom = new Uint16Array(instructions)
 const romData = aw.write({type: ArrayType.U16, data: rom})
 const romReader = ar.readStruct(romData)
 
-opco.initializeCpu(romReader.ptr, romReader.len, instructions.length)
+opco.initializeCpu(romReader.ptr, romReader.len)
 
 const hexDump = computed(() => {
   const values: string[] = []

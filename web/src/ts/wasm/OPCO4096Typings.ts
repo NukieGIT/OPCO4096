@@ -28,5 +28,5 @@ interface WebAssemblyDefaultExports {
 
 export interface WasmOpcoCpu {
   getFramebuffer(): number;
-  initializeCpu(ptr: number, len: number, runtime_cycles: number): void;
+  initializeCpu(ptr: number, len: number): void;
 }
