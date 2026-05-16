@@ -1,6 +1,6 @@
 <div align="center">
 
-![CI Status](http://gitea.lan:3000/api/v1/repos/Noworlax/OPCO4096/badges/workflows/build-and-test.yaml/status.svg)
+![CI Status](http://gitea.lan:3000/Noworlax/OPCO4096/actions/workflows/build-and-test.yaml/badge.svg)
 
 </div>
 <h1 align="center">
