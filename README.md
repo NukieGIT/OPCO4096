@@ -21,6 +21,10 @@ Designed to bridge the gap between high-level reactive frameworks (**Vue 3**) an
 * [Node.js](https://nodejs.org/) (latest LTS recommended)
 * [Zig](https://ziglang.org/) (0.15.2 recommended)
 
+*This project requires **Zig 0.15.2**. It will not compile with Zig 0.16.x or later due to breaking changes in the compiler API.*
+
+*If you use VS Code, the integrated terminal should automatically select the correct version if you have the Zig extension installed. Otherwise, ensure your global `zig version` outputs `0.15.2`.* 
+
 ### Running the project (step-by-step)
 
 ```bash
