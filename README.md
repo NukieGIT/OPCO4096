@@ -21,20 +21,20 @@ Designed to bridge the gap between high-level reactive frameworks (**Vue 3**) an
 * [Node.js](https://nodejs.org/) (latest LTS recommended)
 * [Zig](https://ziglang.org/) (0.15.2 recommended)
 
-### Running the project
+### Running the project (step-by-step)
 
 ```bash
 # Clone the repo
 > git clone https://gitea.lan/noworlax/OPCO4096.git
 > cd OPCO4096
 
-# Install Node.js modules
-> cd web/
-> npm install
-
 # Build the WASM module
-> cd ../wasm
+> cd wasm/
 > zig build wasm
+
+# Install Node.js modules
+> cd ../web/
+> npm install
 
 # Run the app
 > npm run dev
