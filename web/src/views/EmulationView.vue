@@ -201,6 +201,14 @@ onUnmounted(() => cancelAnimationFrame(frameId))
   flex: 1;
 }
 
+.instructions-upload {
+  display: flex;
+  padding: 10px;
+  flex-direction: column;
+  justify-content: center;
+  border: 1px #fff solid;
+}
+
 .right-panel {
   width: 320px;
   border: 1px solid white;
