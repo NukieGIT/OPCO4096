@@ -18,15 +18,14 @@
 
       <div class="controls-panel">
         <button 
-          class="start-btn" 
-          :disabled="rom.length === 0" 
+          :class="['start-btn', { 'running': isRunning }]" 
+          :disabled="rom.length === 0 || isRunning" 
           @click="startRender"
         >
-          Start Execution
+          {{ isRunning ? 'Running...' : 'Start Execution' }}
         </button>
       </div>
     </div>
-    
     <div class="instructions-upload">
       <h2>Select file to execute</h2>
 
@@ -231,7 +230,7 @@ onUnmounted(() => cancelAnimationFrame(frameId))
   text-transform: uppercase;
   border-radius: 4px;
   cursor: pointer;
-  transition: background-color 0.2s ease, opacity 0.2s ease;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .start-btn:hover:not(:disabled) {
@@ -239,10 +238,15 @@ onUnmounted(() => cancelAnimationFrame(frameId))
 }
 
 .start-btn:disabled {
-  background: #333;
-  color: #777;
+  background: #9c0000;
+  color: #221405;
   cursor: not-allowed;
-  border: 1px solid #444;
+  border: none;
+}
+
+.start-btn.running:disabled {
+  background: #ff9f43;
+  color: #221405;
 }
 
 .instructions-upload {
