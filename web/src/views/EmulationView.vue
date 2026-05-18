@@ -48,7 +48,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onUnmounted, computed } from 'vue'
 import { initialize, opco } from '@/ts/wasm/OPCO4096'
 import { ArrayReader, ArrayType, ArrayWriter } from '@/ts/wasm/memory/array'
 
@@ -60,26 +60,6 @@ const WIDTH = 64
 const HEIGHT = 32
 const BYTES_PER_PIXEL = 4; // RGBA
 const COLOR_WHITE = 255;
-
-const instructions = [
-  0x00E0,
-  0x6002,
-  0x6102,
-  0xA032,
-  0xD015,
-
-  0x600A,
-  0x610A,
-  0xA037,
-  0xD015,
-
-  0x6012,
-  0x6112,
-  0xA03C,
-  0xD015,
-
-  0x1200
-]
 
 const aw = new ArrayWriter(opco.memory, opco)
 const ar = new ArrayReader(opco.memory)
