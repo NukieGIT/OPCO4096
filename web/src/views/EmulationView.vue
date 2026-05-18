@@ -70,12 +70,38 @@ const instructions = [
 const aw = new ArrayWriter(opco.memory, opco)
 const ar = new ArrayReader(opco.memory)
 
-const rom = new Uint16Array(instructions)
+const onRomSelected = async (event: Event) => {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
 
-const romData = aw.write({type: ArrayType.U16, data: rom})
-const romReader = ar.readStruct(romData)
+  const arrayBuffer = await file.arrayBuffer()
+  await loadRomFromArrayBuffer(arrayBuffer)
+}
 
-opco.initializeCpu(romReader.ptr, romReader.len)
+const rom = ref<Uint16Array>(new Uint16Array())
+
+const loadRomFromArrayBuffer = async (buffer: ArrayBuffer) => {
+  const bytes = new Uint8Array(buffer)
+  const opcodes = new Uint16Array(bytes.length / 2)
+
+  for (let i = 0; i < opcodes.length; i++) {
+    const highByte = bytes[i * 2] ?? 0
+    const lowByte = bytes[i * 2 + 1] ?? 0
+    
+    opcodes[i] = (highByte << 8) | lowByte
+  }
+  
+  rom.value = opcodes
+  console.log(opcodes.length)
+  
+  const romData = aw.write({ type: ArrayType.U16, data: opcodes })
+  const romReader = ar.readStruct(romData)
+  
+  opco.initializeCpu(romReader.ptr, romReader.len)
+
+  startRender()
+}
 
 const currentRomIndex = ref(0)
 
@@ -84,8 +110,8 @@ const instructionsPerSecond = 100 // overall CPU instruction rate (typical CHIP-
 const hexDump = computed(() => {
   const values: string[] = []
 
-  for (let i = 0; i < rom.length; i++) {
-    const item = rom[i]
+  for (let i = 0; i < rom.value.length; i++) {
+    const item = rom.value[i]
     if (typeof item === 'number') {
       values.push(item.toString(16).toUpperCase().padStart(BYTES_PER_PIXEL, '0'))
     } else {
@@ -98,7 +124,7 @@ const hexDump = computed(() => {
 
 let frameId: number
 
-onMounted(() => {
+function startRender() {
   const canvas = canvasRef.value
   if (!canvas) return
 
@@ -125,7 +151,7 @@ onMounted(() => {
         }
         if (typeof opco.getPC === 'function') {
           const pc = opco.getPC()
-          currentRomIndex.value = Math.max(0, Math.min(rom.length - 1, Math.floor((pc - 0x200) / 2)))
+          currentRomIndex.value = Math.max(0, Math.min(rom.value.length - 1, Math.floor((pc - 0x200) / 2)))
         }
       }
 
@@ -155,7 +181,7 @@ onMounted(() => {
   }
 
   draw()
-})
+}
 
 onUnmounted(() => cancelAnimationFrame(frameId))
 </script>
