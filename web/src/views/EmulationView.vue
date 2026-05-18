@@ -16,7 +16,11 @@
         "
       ></canvas>
     </div>
+    <div class="instructions-upload">
+      <h2>Select file to execute</h2>
 
+      <input type="file" accept=".ch8" @change="onRomSelected" />
+    </div>
     <div class="right-panel">
       <h2>ROM Hex Dump</h2>
 
