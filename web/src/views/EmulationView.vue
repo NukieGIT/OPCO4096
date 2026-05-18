@@ -15,7 +15,18 @@
           image-rendering: pixelated;
         "
       ></canvas>
+
+      <div class="controls-panel">
+        <button 
+          class="start-btn" 
+          :disabled="rom.length === 0" 
+          @click="startRender"
+        >
+          Start Execution
+        </button>
+      </div>
     </div>
+    
     <div class="instructions-upload">
       <h2>Select file to execute</h2>
 
@@ -101,10 +112,8 @@ const loadRomFromArrayBuffer = async (buffer: ArrayBuffer) => {
   
   const romData = aw.write({ type: ArrayType.U16, data: opcodes })
   const romReader = ar.readStruct(romData)
-  
-  opco.initializeCpu(romReader.ptr, romReader.len)
 
-  startRender()
+  opco.initializeCpu(romReader.ptr, romReader.len)
 }
 
 const currentRomIndex = ref(0)
@@ -127,13 +136,18 @@ const hexDump = computed(() => {
 })
 
 let frameId: number
+const isRunning = ref(false)
 
 function startRender() {
+  if (isRunning.value) return 
+
   const canvas = canvasRef.value
   if (!canvas) return
 
   const ctx = canvas.getContext('2d')
   if (!ctx) return
+
+  isRunning.value = true
 
   const image = ctx.createImageData(WIDTH, HEIGHT)
   const pixels = image.data
@@ -178,6 +192,7 @@ function startRender() {
 
     } catch (error) {
       console.error('Error rendering frame:', error)
+      isRunning.value = false
       return
     }
 
@@ -199,6 +214,35 @@ onUnmounted(() => cancelAnimationFrame(frameId))
 
 .left-panel {
   flex: 1;
+}
+
+.controls-panel {
+  margin-top: 12px;
+}
+
+.start-btn {
+  background: #00ff88;
+  color: #08120c;
+  border: none;
+  padding: 10px 24px;
+  font-family: monospace;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, opacity 0.2s ease;
+}
+
+.start-btn:hover:not(:disabled) {
+  background: #00dd77;
+}
+
+.start-btn:disabled {
+  background: #333;
+  color: #777;
+  cursor: not-allowed;
+  border: 1px solid #444;
 }
 
 .instructions-upload {
