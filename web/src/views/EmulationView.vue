@@ -87,7 +87,6 @@ const loadRomFromArrayBuffer = async (buffer: ArrayBuffer) => {
   }
   
   rom.value = opcodes
-  console.log(opcodes.length)
   
   const romData = aw.write({ type: ArrayType.U16, data: opcodes })
   const romReader = ar.readStruct(romData)
