@@ -7,6 +7,7 @@
         ref="canvasRef"
         width="64"
         height="32"
+        class="crt-border"
         style="
           width:640px;
           height:320px;
@@ -15,9 +16,23 @@
           image-rendering: pixelated;
         "
       ></canvas>
-    </div>
 
-    <div class="right-panel">
+      <div class="controls-panel">
+        <button 
+          :class="['start-btn', { 'running': isRunning }]" 
+          :disabled="rom.length === 0 || isRunning" 
+          @click="startRender"
+        >
+          {{ isRunning ? 'Running...' : 'Start Execution' }}
+        </button>
+      </div>
+    </div>
+    <div class="instructions-upload crt-border">
+      <h2>Select file to execute</h2>
+
+      <input type="file" accept=".ch8" @change="onRomSelected" />
+    </div>
+    <div class="right-panel crt-border">
       <h2>ROM Hex Dump</h2>
 
       <div class="hex-grid">
@@ -34,7 +49,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onUnmounted, computed } from 'vue'
 import { initialize, opco } from '@/ts/wasm/OPCO4096'
 import { ArrayReader, ArrayType, ArrayWriter } from '@/ts/wasm/memory/array'
 
@@ -47,35 +62,38 @@ const HEIGHT = 32
 const BYTES_PER_PIXEL = 4; // RGBA
 const COLOR_WHITE = 255;
 
-const instructions = [
-  0x00E0,
-  0x6002,
-  0x6102,
-  0xA032,
-  0xD015,
-
-  0x600A,
-  0x610A,
-  0xA037,
-  0xD015,
-
-  0x6012,
-  0x6112,
-  0xA03C,
-  0xD015,
-
-  0x1200
-]
-
 const aw = new ArrayWriter(opco.memory, opco)
 const ar = new ArrayReader(opco.memory)
 
-const rom = new Uint16Array(instructions)
+const onRomSelected = async (event: Event) => {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
 
-const romData = aw.write({type: ArrayType.U16, data: rom})
-const romReader = ar.readStruct(romData)
+  const arrayBuffer = await file.arrayBuffer()
+  loadRomFromArrayBuffer(arrayBuffer)
+}
 
-opco.initializeCpu(romReader.ptr, romReader.len)
+const rom = ref<Uint16Array>(new Uint16Array())
+
+const loadRomFromArrayBuffer = (buffer: ArrayBuffer) => {
+  const bytes = new Uint8Array(buffer)
+  const opcodes = new Uint16Array(bytes.length / 2)
+
+  for (let i = 0; i < opcodes.length; i++) {
+    const highByte = bytes[i * 2] ?? 0
+    const lowByte = bytes[i * 2 + 1] ?? 0
+    
+    opcodes[i] = (highByte << 8) | lowByte
+  }
+  
+  rom.value = opcodes
+  
+  const romData = aw.write({ type: ArrayType.U16, data: opcodes })
+  const romReader = ar.readStruct(romData)
+
+  opco.initializeCpu(romReader.ptr, romReader.len)
+}
 
 const currentRomIndex = ref(0)
 
@@ -84,8 +102,8 @@ const instructionsPerSecond = 100 // overall CPU instruction rate (typical CHIP-
 const hexDump = computed(() => {
   const values: string[] = []
 
-  for (let i = 0; i < rom.length; i++) {
-    const item = rom[i]
+  for (let i = 0; i < rom.value.length; i++) {
+    const item = rom.value[i]
     if (typeof item === 'number') {
       values.push(item.toString(16).toUpperCase().padStart(BYTES_PER_PIXEL, '0'))
     } else {
@@ -97,13 +115,18 @@ const hexDump = computed(() => {
 })
 
 let frameId: number
+const isRunning = ref(false)
 
-onMounted(() => {
+function startRender() {
+  if (isRunning.value) return 
+
   const canvas = canvasRef.value
   if (!canvas) return
 
   const ctx = canvas.getContext('2d')
   if (!ctx) return
+
+  isRunning.value = true
 
   const image = ctx.createImageData(WIDTH, HEIGHT)
   const pixels = image.data
@@ -125,7 +148,7 @@ onMounted(() => {
         }
         if (typeof opco.getPC === 'function') {
           const pc = opco.getPC()
-          currentRomIndex.value = Math.max(0, Math.min(rom.length - 1, Math.floor((pc - 0x200) / 2)))
+          currentRomIndex.value = Math.max(0, Math.min(rom.value.length - 1, Math.floor((pc - 0x200) / 2)))
         }
       }
 
@@ -148,6 +171,7 @@ onMounted(() => {
 
     } catch (error) {
       console.error('Error rendering frame:', error)
+      isRunning.value = false
       return
     }
 
@@ -155,13 +179,14 @@ onMounted(() => {
   }
 
   draw()
-})
+}
 
 onUnmounted(() => cancelAnimationFrame(frameId))
 </script>
 
 <style scoped>
 .layout {
+  margin: 10px;
   display: flex;
   gap: 24px;
   align-items: flex-start;
@@ -169,6 +194,53 @@ onUnmounted(() => cancelAnimationFrame(frameId))
 
 .left-panel {
   flex: 1;
+}
+
+.controls-panel {
+  margin-top: 12px;
+}
+
+.start-btn {
+  background: #00ff88;
+  color: #08120c;
+  border: none;
+  padding: 10px 24px;
+  font-family: monospace;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+
+  /* Remove the CRT look from text to improve readability */
+  text-shadow: none !important;
+  animation: none !important;
+  letter-spacing: normal;
+}
+
+.start-btn:hover:not(:disabled) {
+  background: #00dd77;
+}
+
+.start-btn:disabled {
+  background: #9c0000;
+  color: #221405;
+  cursor: not-allowed;
+  border: none;
+}
+
+.start-btn.running:disabled {
+  background: #ff9f43;
+  color: #221405;
+}
+
+.instructions-upload {
+  display: flex;
+  padding: 10px;
+  flex-direction: column;
+  justify-content: center;
+  border: 1px #fff solid;
 }
 
 .right-panel {
