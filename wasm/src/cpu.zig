@@ -36,6 +36,7 @@ pub const Chip8CPU = struct {
     pc: u16 = ROM_START_ADDRESS, // Starts at ROM_START_ADDRESS (0x200); lower memory is reserved for the interpreter and font set
     i: u16 = 0,
     stack: [16]u16 = [_]u16{0} ** 16,
+    sp: u8 = 0,
     delay_timer: u8 = 0,
     sound_timer: u8 = 0,
     v: [16]u8 = [_]u8{0} ** 16, // VF is for flags (carry, collision, etc)
@@ -91,15 +92,26 @@ pub const Chip8CPU = struct {
 
         // Decode and execute
         switch (opcode) {
-            0x0000 => {
+            0x0000 => { // CLS
                 switch (instruction) {
                     0x00E0 => { // CLS
                         self.frame_buffer = [_]u8{0} ** (64 * 32);
                     },
-                    else => {},
+                    0x00EE => { // RET
+                        if (self.sp == 0) { @panic("Stack Underflow!"); }
+                        self.sp -= 1;
+                        self.pc = self.stack[self.sp];
+                    },
+                    else => { @panic("Unknown opcode!"); },
                 }
             },
             0x1000 => { // JP addr
+                self.pc = nnn;
+            },
+            0x2000 => { // CALL addr
+                if (self.sp >= 16) { @panic("Stack Overflow!"); }
+                self.stack[self.sp] = self.pc;
+                self.sp += 1;
                 self.pc = nnn;
             },
             0x6000 => { // LD Vx, byte
