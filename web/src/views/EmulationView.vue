@@ -186,6 +186,7 @@ onUnmounted(() => cancelAnimationFrame(frameId))
 
 <style scoped>
 .layout {
+  margin: 10px;
   display: flex;
   gap: 24px;
   align-items: flex-start;
