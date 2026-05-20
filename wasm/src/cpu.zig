@@ -114,6 +114,26 @@ pub const Chip8CPU = struct {
                 self.sp += 1;
                 self.pc = nnn;
             },
+            0x3000 => { // SE Vx, byte
+                if (self.v[x] == nn) {
+                    self.pc += 2;
+                }
+            },
+            0x4000 => { // SNE Vx, byte
+                if (self.v[x] != nn) {
+                    self.pc += 2;
+                }
+            },
+            0x5000 => { // SE Vx, Vy
+                // ROM instruction corruption check
+                if ((instruction & 0x000F) == 0) {
+                    if (self.v[x] == self.v[y]) {
+                        self.pc += 2;
+                    }
+                } else {
+                    @panic("Invalid opcode format for 0x5000 family!");
+                }
+            },
             0x6000 => { // LD Vx, byte
                 self.v[x] = nn;
             },
