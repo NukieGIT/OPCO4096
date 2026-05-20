@@ -7,6 +7,7 @@
         ref="canvasRef"
         width="64"
         height="32"
+        class="crt-border"
         style="
           width:640px;
           height:320px;
@@ -26,12 +27,12 @@
         </button>
       </div>
     </div>
-    <div class="instructions-upload">
+    <div class="instructions-upload crt-border">
       <h2>Select file to execute</h2>
 
       <input type="file" accept=".ch8" @change="onRomSelected" />
     </div>
-    <div class="right-panel">
+    <div class="right-panel crt-border">
       <h2>ROM Hex Dump</h2>
 
       <div class="hex-grid">
@@ -210,6 +211,11 @@ onUnmounted(() => cancelAnimationFrame(frameId))
   border-radius: 4px;
   cursor: pointer;
   transition: background-color 0.2s ease, color 0.2s ease;
+
+  /* Remove the CRT look from text to improve readability */
+  text-shadow: none !important;
+  animation: none !important;
+  letter-spacing: normal;
 }
 
 .start-btn:hover:not(:disabled) {
