@@ -70,12 +70,12 @@ const onRomSelected = async (event: Event) => {
   if (!file) return
 
   const arrayBuffer = await file.arrayBuffer()
-  await loadRomFromArrayBuffer(arrayBuffer)
+  loadRomFromArrayBuffer(arrayBuffer)
 }
 
 const rom = ref<Uint16Array>(new Uint16Array())
 
-const loadRomFromArrayBuffer = async (buffer: ArrayBuffer) => {
+const loadRomFromArrayBuffer = (buffer: ArrayBuffer) => {
   const bytes = new Uint8Array(buffer)
   const opcodes = new Uint16Array(bytes.length / 2)
 
