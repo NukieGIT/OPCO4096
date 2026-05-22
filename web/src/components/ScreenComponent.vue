@@ -38,9 +38,10 @@ await initializeOPCO()
 const aw = new ArrayWriter(opco.memory, opco)
 const ar = new ArrayReader(opco.memory)
 
-const fbPtr = opco.getFramebuffer()
+const opcoFbPtr = opco.getFramebuffer()
 
 const lovelyhardcodedchip8ibmlogo = await fetch('logoibm.ch8').then(res => res.arrayBuffer())
+loadRomFromArrayBuffer(lovelyhardcodedchip8ibmlogo)
 
 let rafId = 0
 let cpuTicker: number | undefined = undefined
@@ -76,44 +77,41 @@ onMounted(() => {
   }
   const gl = initGL(canvas.value)
 
-  const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource)
-  const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource)
-  const program = createProgram(gl, vertexShader, fragmentShader)
+  const fullScreenVertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource)
+  const opcoFbFragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource)
+  const opcoFbprogram = createProgram(gl, fullScreenVertexShader, opcoFbFragmentShader)
 
   resizeCanvasToDisplaySize(canvas.value)
   gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
 
-  gl.useProgram(program)
+  gl.useProgram(opcoFbprogram)
 
-  loadRomFromArrayBuffer(lovelyhardcodedchip8ibmlogo)
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
 
-  const textureUnit = 0
-
-  gl.activeTexture(gl.TEXTURE0 + textureUnit)
-  const texture = gl.createTexture()
-  gl.bindTexture(gl.TEXTURE_2D, texture)
+  const opcoFbTexture = gl.createTexture()
+  gl.bindTexture(gl.TEXTURE_2D, opcoFbTexture)
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, 64, 32, 0, gl.RED, gl.UNSIGNED_BYTE, null)
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
 
 
+
+
   cpuTicker = setInterval(() => {
     opco.tickCpu()
-    const fbData = ar.read(fbPtr)
+    const fbData = ar.read(opcoFbPtr)
     if (fbData.type !== ArrayType.U8) {
       console.error('Framebuffer data is not of type U8')
       return
     }
 
-    gl.activeTexture(gl.TEXTURE0 + textureUnit)
-    gl.bindTexture(gl.TEXTURE_2D, texture)
+    gl.bindTexture(gl.TEXTURE_2D, opcoFbTexture)
     gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, 64, 32, gl.RED, gl.UNSIGNED_BYTE, fbData.data)
 
   }, 1000 / 100) // 100Hz
 
-  const aPositionLoc = gl.getAttribLocation(program, 'aPosition')
-  const aTexCoordLoc = gl.getAttribLocation(program, 'aTexCoord')
-  const uTextureLoc = gl.getUniformLocation(program, 'uTexture')
+  const aPositionLoc = gl.getAttribLocation(opcoFbprogram, 'aPosition')
+  const aTexCoordLoc = gl.getAttribLocation(opcoFbprogram, 'aTexCoord')
 
   const vertexBuffer = gl.createBuffer()
   gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer)
@@ -126,8 +124,6 @@ onMounted(() => {
   gl.bufferData(gl.ARRAY_BUFFER, texCoordData, gl.STATIC_DRAW)
   gl.vertexAttribPointer(aTexCoordLoc, 2, gl.FLOAT, false, 0, 0)
   gl.enableVertexAttribArray(aTexCoordLoc)
-
-  gl.uniform1i(uTextureLoc, textureUnit)
 
   const draw = () => {
 
