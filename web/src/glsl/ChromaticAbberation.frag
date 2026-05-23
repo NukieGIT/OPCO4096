@@ -22,7 +22,7 @@ void main() {
   float hPower = smoothstep(0.0, 0.05, hDist);
   float slowerTime = uTime / 25.0;
   float randValue = rand(vTexCoord);
-  float randomizer = (sin(slowerTime) - cos(slowerTime + randValue) * sin(slowerTime) * cos(slowerTime) + sin(slowerTime / randValue)) * 0.5;
+  float randomizer = (sin(slowerTime) - cos(slowerTime + randValue) * sin(slowerTime) * cos(slowerTime) + sin(slowerTime * randValue)) * 0.5;
   fragColor = vec4(
     texture(uTexture, vec2(vTexCoord.x - multiplier * vPower * randomizer, vTexCoord.y)).r,
     texture(uTexture, vec2(vTexCoord.x, vTexCoord.y + multiplier * hPower * (randomizer + 3.0))).g,
