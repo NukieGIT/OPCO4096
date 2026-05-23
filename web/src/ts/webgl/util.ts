@@ -94,3 +94,29 @@ export function resizeCanvasToDisplaySize(canvas: HTMLCanvasElement): boolean {
   }
   return false
 }
+
+/**
+ * Centered, integer-scaled viewport, to avoid artifacts caused by non-integer scaling.
+ * Picks the largest whole-number scale that fits (clamped to min `1`).
+ *
+ * @param canvasWidth Canvas pixel width (`canvas.width`).
+ * @param canvasHeight Canvas pixel height (`canvas.height`).
+ * @param width Unscaled content width in pixels (e.g. your framebuffer/texture width).
+ * @param height Unscaled content height in pixels (e.g. your framebuffer/texture height).
+ * @returns Viewport rectangle in pixels: `{ vpX, vpY, vpW, vpH }` (pass to `gl.viewport`).
+ */
+export function calcScaleFactor(
+  canvasWidth: number,
+  canvasHeight: number,
+  width: number,
+  height: number,
+) {
+  const scale = Math.max(1, Math.floor(Math.min(canvasWidth / width, canvasHeight / height)))
+
+  const vpW = width * scale
+  const vpH = height * scale
+  const vpX = Math.floor((canvasWidth - vpW) / 2)
+  const vpY = Math.floor((canvasHeight - vpH) / 2)
+
+  return { vpX, vpY, vpW, vpH }
+}
