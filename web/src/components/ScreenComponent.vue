@@ -3,13 +3,23 @@
 </template>
 
 <script setup lang="ts">
-import {onMounted, onUnmounted, ref, useTemplateRef } from 'vue'
+import { getCurrentInstance, onMounted, onUnmounted, ref, useTemplateRef } from 'vue'
 
 import vertexShaderSource from '@/glsl/OpcoR8FrameBuffer.vert?raw'
 import fragmentShaderSource from '@/glsl/OpcoR8FrameBuffer.frag?raw'
-import { createProgram, createShader, initGL, resizeCanvasToDisplaySize } from '@/ts/webgl/util'
+import chromaticAbberationFragmentShaderSource from '@/glsl/ChromaticAbberation.frag?raw'
+
+import {
+  calcScaleFactor,
+  createProgram,
+  createShader,
+  initGL,
+  resizeCanvasToDisplaySize,
+} from '@/ts/webgl/util'
 import { initialize as initializeOPCO, opco } from '@/ts/wasm/OPCO4096'
 import { ArrayReader, ArrayType, ArrayWriter } from '@/ts/wasm/memory/array'
+
+const COMPONENT_NAME = getCurrentInstance()?.type.__name ?? 'UnknownComponent'
 
 const canvas = useTemplateRef<HTMLCanvasElement>('canvas')
 
@@ -40,34 +50,41 @@ const ar = new ArrayReader(opco.memory)
 
 const opcoFbPtr = opco.getFramebuffer()
 
-const lovelyhardcodedchip8ibmlogo = await fetch('logoibm.ch8').then(res => res.arrayBuffer())
+function createIntermediateFramebufferTexture(
+  gl: WebGL2RenderingContext,
+  width: number,
+  height: number,
+) {
+  const texture = gl.createTexture()
+  gl.bindTexture(gl.TEXTURE_2D, texture)
+
+  gl.texStorage2D(gl.TEXTURE_2D, 1, gl.RGBA8, width, height)
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+
+  gl.bindTexture(gl.TEXTURE_2D, null)
+  return texture
+}
+
+const lovelyhardcodedchip8ibmlogo = await fetch('logoibm.ch8').then((res) => res.arrayBuffer())
 loadRomFromArrayBuffer(lovelyhardcodedchip8ibmlogo)
 
 let rafId = 0
 let cpuTicker: number | undefined = undefined
 
-// Fullscreen quad to draw opco framebuffer as texture to.
+// Fullscreen quad and texture coordinates to draw opco framebuffer as texture to.
+// vec4 for positions, vec2 for uv coordinates
 // prettier-ignore
 const vertexData = new Float32Array([
-  -1, -1, 0,
-  1, -1, 0,
-  -1, 1, 0,
+  -1, -1, 0, 1,  0, 0,
+  1, -1, 0, 1,   1, 0,
+  -1, 1, 0, 1,   0, 1,
 
-  -1, 1, 0,
-  1, -1, 0,
-  1, 1, 0
-])
-
-// Fullscreen quad texture coordinates.
-// prettier-ignore
-const texCoordData = new Float32Array([
-  0, 1,
-  1, 1,
-  0, 0,
-
-  0, 0,
-  1, 1,
-  1, 0
+  -1, 1, 0, 1,   0, 1,
+  1, -1, 0, 1,   1, 0,
+  1, 1, 0, 1,    1, 1,
 ])
 
 onMounted(() => {
@@ -79,66 +96,169 @@ onMounted(() => {
 
   const fullScreenVertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource)
   const opcoFbFragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource)
+
+  const chromaticAbberationFragmentShader = createShader(
+    gl,
+    gl.FRAGMENT_SHADER,
+    chromaticAbberationFragmentShaderSource,
+  )
+
   const opcoFbprogram = createProgram(gl, fullScreenVertexShader, opcoFbFragmentShader)
+  const chromaticAbberationProgram = createProgram(
+    gl,
+    fullScreenVertexShader,
+    chromaticAbberationFragmentShader,
+  )
 
   resizeCanvasToDisplaySize(canvas.value)
-  gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
+  const { vpX, vpY, vpW, vpH } = calcScaleFactor(canvas.value.width, canvas.value.height, 64, 32)
+  gl.viewport(vpX, vpY, vpW, vpH)
 
-  gl.useProgram(opcoFbprogram)
+  const aPositionLoc = gl.getAttribLocation(opcoFbprogram, 'aPosition')
+  const aTexCoordLoc = gl.getAttribLocation(opcoFbprogram, 'aTexCoord')
+  const uTimeLoc = gl.getUniformLocation(chromaticAbberationProgram, 'uTime')
 
-  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+  // #region OPCO framebuffer Vao
+  const opcoFbVao = gl.createVertexArray()
+  gl.bindVertexArray(opcoFbVao)
+
+  const vertexBuffer = gl.createBuffer()
+  gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer)
+  gl.bufferData(gl.ARRAY_BUFFER, vertexData, gl.STATIC_DRAW)
+  gl.vertexAttribPointer(aPositionLoc, 4, gl.FLOAT, false, 6 * Float32Array.BYTES_PER_ELEMENT, 0)
+  gl.vertexAttribPointer(
+    aTexCoordLoc,
+    2,
+    gl.FLOAT,
+    false,
+    6 * Float32Array.BYTES_PER_ELEMENT,
+    4 * Float32Array.BYTES_PER_ELEMENT,
+  )
+  gl.enableVertexAttribArray(aPositionLoc)
+  gl.enableVertexAttribArray(aTexCoordLoc)
+
+  gl.bindVertexArray(null)
+  // #endregion
 
   const opcoFbTexture = gl.createTexture()
   gl.bindTexture(gl.TEXTURE_2D, opcoFbTexture)
+
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, 64, 32, 0, gl.RED, gl.UNSIGNED_BYTE, null)
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
 
+  gl.bindTexture(gl.TEXTURE_2D, null)
 
+  let intermediateOpcoFbTexture = createIntermediateFramebufferTexture(gl, vpW, vpH)
 
+  gl.bindTexture(gl.TEXTURE_2D, null)
+
+  // #region chromatic abberation Vao
+  const chromaticAbberationVao = gl.createVertexArray()
+  gl.bindVertexArray(chromaticAbberationVao)
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer)
+  gl.bufferData(gl.ARRAY_BUFFER, vertexData, gl.STATIC_DRAW)
+  gl.vertexAttribPointer(aPositionLoc, 4, gl.FLOAT, false, 6 * Float32Array.BYTES_PER_ELEMENT, 0)
+  gl.vertexAttribPointer(
+    aTexCoordLoc,
+    2,
+    gl.FLOAT,
+    false,
+    6 * Float32Array.BYTES_PER_ELEMENT,
+    4 * Float32Array.BYTES_PER_ELEMENT,
+  )
+  gl.enableVertexAttribArray(aPositionLoc)
+  gl.enableVertexAttribArray(aTexCoordLoc)
+
+  gl.bindVertexArray(null)
+  // #endregion
+
+  // #region intermediate framebuffer setup
+  const fbo = gl.createFramebuffer()
+  gl.bindFramebuffer(gl.FRAMEBUFFER, fbo)
+
+  gl.framebufferTexture2D(
+    gl.FRAMEBUFFER,
+    gl.COLOR_ATTACHMENT0,
+    gl.TEXTURE_2D,
+    intermediateOpcoFbTexture,
+    0,
+  )
+
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+  // #endregion
 
   cpuTicker = setInterval(() => {
     opco.tickCpu()
     const fbData = ar.read(opcoFbPtr)
     if (fbData.type !== ArrayType.U8) {
-      console.error('Framebuffer data is not of type U8')
+      console.error(`[${COMPONENT_NAME}] Framebuffer data is not of type U8`)
       return
     }
 
+    gl.bindVertexArray(opcoFbVao)
     gl.bindTexture(gl.TEXTURE_2D, opcoFbTexture)
     gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, 64, 32, gl.RED, gl.UNSIGNED_BYTE, fbData.data)
-
+    gl.bindTexture(gl.TEXTURE_2D, null)
+    gl.bindVertexArray(null)
   }, 1000 / 100) // 100Hz
 
-  const aPositionLoc = gl.getAttribLocation(opcoFbprogram, 'aPosition')
-  const aTexCoordLoc = gl.getAttribLocation(opcoFbprogram, 'aTexCoord')
-
-  const vertexBuffer = gl.createBuffer()
-  gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer)
-  gl.bufferData(gl.ARRAY_BUFFER, vertexData, gl.STATIC_DRAW)
-  gl.vertexAttribPointer(aPositionLoc, 3, gl.FLOAT, false, 0, 0)
-  gl.enableVertexAttribArray(aPositionLoc)
-
-  const texCoordBuffer = gl.createBuffer()
-  gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer)
-  gl.bufferData(gl.ARRAY_BUFFER, texCoordData, gl.STATIC_DRAW)
-  gl.vertexAttribPointer(aTexCoordLoc, 2, gl.FLOAT, false, 0, 0)
-  gl.enableVertexAttribArray(aTexCoordLoc)
-
+  let lastViewport = { vpW, vpH }
   const draw = () => {
+    const resized = resizeCanvasToDisplaySize(canvas.value!)
+    const { vpX, vpY, vpW, vpH } = calcScaleFactor(
+      canvas.value!.width,
+      canvas.value!.height,
+      64,
+      32,
+    )
+    if (resized) {
+      gl.viewport(vpX, vpY, vpW, vpH)
 
-    resizeCanvasToDisplaySize(canvas.value!)
+      // Recreate intermediate framebuffer texture with new viewport size to avoid mismatched scaling issues.
+      if (lastViewport.vpW !== vpW || lastViewport.vpH !== vpH) {
+        lastViewport = { vpW, vpH }
 
-    // Calculates and forces a scale factor of 64x32 framebuffer to avoid triangle seam artifacts.
-    const scale = Math.max(1, Math.floor(Math.min(gl.canvas.width / 64, gl.canvas.height / 32)))
+        gl.deleteTexture(intermediateOpcoFbTexture)
+        intermediateOpcoFbTexture = createIntermediateFramebufferTexture(gl, vpW, vpH)
 
-    const vpW = 64 * scale
-    const vpH = 32 * scale
-    const vpX = Math.floor((gl.canvas.width - vpW) / 2)
-    const vpY = Math.floor((gl.canvas.height - vpH) / 2)
+        gl.bindFramebuffer(gl.FRAMEBUFFER, fbo)
+        gl.framebufferTexture2D(
+          gl.FRAMEBUFFER,
+          gl.COLOR_ATTACHMENT0,
+          gl.TEXTURE_2D,
+          intermediateOpcoFbTexture,
+          0,
+        )
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+        console.log(
+          `[${COMPONENT_NAME}] Resized canvas and recreated intermediate framebuffer texture.`,
+        )
+      }
+    }
 
+    gl.uniform1f(uTimeLoc, performance.now())
+
+    // Render opco framebuffer to intermediate framebuffer
+    gl.useProgram(opcoFbprogram)
+    gl.bindVertexArray(opcoFbVao)
+    gl.bindTexture(gl.TEXTURE_2D, opcoFbTexture)
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fbo)
+    gl.clear(gl.COLOR_BUFFER_BIT)
+    gl.viewport(0, 0, vpW, vpH)
+    gl.drawArrays(gl.TRIANGLES, 0, 6)
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+    gl.bindTexture(gl.TEXTURE_2D, null)
+
+    // Render intermediate framebuffer to screen with chromatic abberation shader
+    gl.useProgram(chromaticAbberationProgram)
+    gl.bindVertexArray(chromaticAbberationVao)
+    gl.bindTexture(gl.TEXTURE_2D, intermediateOpcoFbTexture)
     gl.viewport(vpX, vpY, vpW, vpH)
     gl.drawArrays(gl.TRIANGLES, 0, 6)
+    gl.bindTexture(gl.TEXTURE_2D, null)
+    gl.bindVertexArray(null)
 
     rafId = requestAnimationFrame(draw)
   }
