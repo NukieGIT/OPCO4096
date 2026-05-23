@@ -76,11 +76,12 @@ export function initGL(canvasEl: HTMLCanvasElement): WebGL2RenderingContext {
  * Call before `gl.viewport(...)` / resolution uniforms.
  *
  * @param canvas Target canvas.
+ * @returns a boolean indicating whether the canvas was resized.
  */
-export function resizeCanvasToDisplaySize(canvas: HTMLCanvasElement) {
+export function resizeCanvasToDisplaySize(canvas: HTMLCanvasElement): boolean {
   const cssWidth = canvas.clientWidth
   const cssHeight = canvas.clientHeight
-  if (cssWidth <= 0 || cssHeight <= 0) return
+  if (cssWidth <= 0 || cssHeight <= 0) return false
 
   const dpr = window.devicePixelRatio || 1
   const displayWidth = Math.max(1, Math.round(cssWidth * dpr))
@@ -89,5 +90,7 @@ export function resizeCanvasToDisplaySize(canvas: HTMLCanvasElement) {
   if (canvas.width !== displayWidth || canvas.height !== displayHeight) {
     canvas.width = displayWidth
     canvas.height = displayHeight
+    return true
   }
+  return false
 }
