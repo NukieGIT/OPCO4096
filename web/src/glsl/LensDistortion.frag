@@ -24,7 +24,7 @@ void main() {
   float y = f * (vTexCoord.y - 0.5f) + 0.5f;
   vec4 inputDistord = texture(uTexture, vec2(x, y));
   if (x < 0.0f || x > 1.0f || y < 0.0f || y > 1.0f) {
-    inputDistord = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+    inputDistord = vec4(0.02f, 0.02f, 0.02f, 1.0f);
   }
   fragColor = vec4(inputDistord.r, inputDistord.g, inputDistord.b, 1.0f);
 }
