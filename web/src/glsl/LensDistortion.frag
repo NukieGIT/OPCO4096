@@ -1,0 +1,30 @@
+#version 300 es
+
+precision highp float;
+
+uniform sampler2D uTexture;
+
+in vec2 vTexCoord;
+
+out vec4 fragColor;
+
+void main() {
+  // lens distortion coefficient
+  float k = 1.0f;
+  // cubic distortion value
+  float kcube = -0.5f;
+  float r2 = (vTexCoord.x - 0.5f) * (vTexCoord.x - 0.5f) + (vTexCoord.y - 0.5f) * (vTexCoord.y - 0.5f);
+  float f = 0.0f;
+  if (kcube == 0.0f) {
+    f = 1.0f + r2 * k;
+  } else {
+    f = 1.0f + r2 * (k + kcube * sqrt(r2));
+  };
+  float x = f * (vTexCoord.x - 0.5f) + 0.5f;
+  float y = f * (vTexCoord.y - 0.5f) + 0.5f;
+  vec4 inputDistord = texture(uTexture, vec2(x, y));
+  if (x < 0.0f || x > 1.0f || y < 0.0f || y > 1.0f) {
+    inputDistord = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+  }
+  fragColor = vec4(inputDistord.r, inputDistord.g, inputDistord.b, 1.0f);
+}
