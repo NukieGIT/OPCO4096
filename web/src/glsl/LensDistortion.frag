@@ -23,11 +23,14 @@ void main() {
   float x = f * (vTexCoord.x - 0.5f) + 0.5f;
   float y = f * (vTexCoord.y - 0.5f) + 0.5f;
   vec4 inputDistord = texture(uTexture, vec2(x, y));
+  // Fake bezel effect by darkening the edges of the screen
   if (x < 0.0f || x > 1.0f || y < 0.0f || y > 1.0f) {
     float distToEdgeX = 1.0f - (abs(x - 0.5f) * 2.0f);
     float distToEdgeY = 1.0f - (abs(y - 0.5f) * 2.0f);
     float distToEdge = abs(distToEdgeX - distToEdgeY);
-    inputDistord = vec4(min(0.3f * distToEdge, 0.03f), min(0.3f * distToEdge, 0.03f), min(0.3f * distToEdge, 0.03f), 1.0f);
+    float edgeSmoothingFactor = 0.3f;
+    float colorDarkness = 0.03f;
+    inputDistord = vec4(min(edgeSmoothingFactor * distToEdge, colorDarkness), min(edgeSmoothingFactor * distToEdge, colorDarkness), min(edgeSmoothingFactor * distToEdge, colorDarkness), 1.0f);
   }
   fragColor = vec4(inputDistord.r, inputDistord.g, inputDistord.b, 1.0f);
 }
