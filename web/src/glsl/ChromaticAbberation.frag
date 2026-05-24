@@ -14,18 +14,18 @@ float rand(vec2 co) {
 }
 
 void main() {
-  const float multiplier = 0.0005;
-  float vDist = abs(vTexCoord.x - 0.5);
-  float hDist = abs(vTexCoord.y - 0.5);
+  const float multiplier = 0.0002;
+  float vDist = abs(vTexCoord.y - 0.5);
+  float hDist = abs(vTexCoord.x - 0.5);
   // Stronger towards the edges
-  float vPower = smoothstep(0.0, 0.6, vDist);
+  float vPower = smoothstep(0.0, 0.2, vDist);
   float hPower = smoothstep(0.0, 0.05, hDist);
-  float slowerTime = uTime / 25.0;
+  float slowerTime = uTime * 0.5;
   float randValue = rand(vTexCoord);
-  float randomizer = (sin(slowerTime) - cos(slowerTime + randValue) * sin(slowerTime) * cos(slowerTime) + sin(slowerTime * randValue)) * 0.5;
+  float randomizer = (sin(slowerTime) - cos(slowerTime + randValue) * sin(slowerTime) * cos(slowerTime) + sin(slowerTime * randValue)) * 13.0;
   fragColor = vec4(
-    texture(uTexture, vec2(vTexCoord.x - multiplier * vPower * randomizer, vTexCoord.y)).r,
-    texture(uTexture, vec2(vTexCoord.x, vTexCoord.y + multiplier * hPower * (randomizer + 3.0))).g,
+    texture(uTexture, vec2(vTexCoord.x - multiplier * hPower * randomizer, vTexCoord.y)).r,
+    texture(uTexture, vec2(vTexCoord.x, vTexCoord.y + multiplier * vPower * (randomizer + 3.0))).g,
     texture(uTexture, vec2(vTexCoord.x + multiplier * hPower * (randomizer - 5.5), vTexCoord.y)).b,
     1.0
   );
