@@ -52,11 +52,11 @@ const ar = new ArrayReader(opco.memory)
 const opcoFbPtr = opco.getFramebuffer()
 
 function intermediateFramebufferTextureFactory(paramSetter: (gl: WebGL2RenderingContext) => void) {
-  return (gl: WebGL2RenderingContext, width: number, height: number) => {
+  return (gl: WebGL2RenderingContext, width: number, height: number, internalFormat: number) => {
     const texture = gl.createTexture()
     gl.bindTexture(gl.TEXTURE_2D, texture)
 
-    gl.texStorage2D(gl.TEXTURE_2D, 1, gl.RGBA8, width, height)
+    gl.texStorage2D(gl.TEXTURE_2D, 1, internalFormat, width, height)
     paramSetter(gl)
 
     gl.bindTexture(gl.TEXTURE_2D, null)
@@ -166,8 +166,8 @@ onMounted(() => {
 
   gl.bindTexture(gl.TEXTURE_2D, null)
 
-  let intermediateOpcoFbTexture = createFrameBufferTexture(gl, vpW, vpH)
-  let lensDistortionFbTexture = createFrameBufferTexture(gl, vpW, vpH)
+  let intermediateOpcoFbTexture = createFrameBufferTexture(gl, vpW, vpH, gl.RGBA8)
+  let lensDistortionFbTexture = createFrameBufferTexture(gl, vpW, vpH, gl.RGBA8)
 
   // #region chromatic abberation Vao
   const chromaticAbberationVao = gl.createVertexArray()
@@ -273,7 +273,7 @@ onMounted(() => {
         lastViewport = { vpW, vpH }
 
         gl.deleteTexture(intermediateOpcoFbTexture)
-        intermediateOpcoFbTexture = createFrameBufferTexture(gl, vpW, vpH)
+        intermediateOpcoFbTexture = createFrameBufferTexture(gl, vpW, vpH, gl.RGBA8)
 
         gl.bindFramebuffer(gl.FRAMEBUFFER, opcoFbFbo)
         gl.framebufferTexture2D(
@@ -287,7 +287,7 @@ onMounted(() => {
 
 
         gl.deleteTexture(lensDistortionFbTexture)
-        lensDistortionFbTexture = createFrameBufferTexture(gl, vpW, vpH)
+        lensDistortionFbTexture = createFrameBufferTexture(gl, vpW, vpH, gl.RGBA8)
 
         gl.bindFramebuffer(gl.FRAMEBUFFER, lensDistortionFbFbo)
         gl.framebufferTexture2D(
