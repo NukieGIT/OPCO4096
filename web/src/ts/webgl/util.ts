@@ -61,11 +61,12 @@ export function createProgram(
  * Initializes WebGL2 context.
  *
  * @param canvasEl Canvas element to get context from.
+ * @param options WebGL context attributes.
  * @returns Initialized WebGL2 context.
  * @throws Error if WebGL2 is not supported.
  */
-export function initGL(canvasEl: HTMLCanvasElement): WebGL2RenderingContext {
-  const gl = canvasEl.getContext('webgl2')
+export function initGL(canvasEl: HTMLCanvasElement, options?: WebGLContextAttributes): WebGL2RenderingContext {
+  const gl = canvasEl.getContext('webgl2', options)
   if (!gl) throw new Error('WebGL2 not supported')
   gl.clear(gl.COLOR_BUFFER_BIT)
   return gl
