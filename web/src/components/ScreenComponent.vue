@@ -365,7 +365,7 @@ onMounted(() => {
       }
     }
 
-    // Render opco's framebuffer to a framebuffer
+    // OPCO framebuffer used as a texture
     gl.useProgram(opcoFbprogram)
     gl.bindVertexArray(opcoFbVao)
     gl.bindTexture(gl.TEXTURE_2D, opcoFbTexture)
@@ -376,6 +376,7 @@ onMounted(() => {
     gl.bindFramebuffer(gl.FRAMEBUFFER, null)
     gl.bindTexture(gl.TEXTURE_2D, null)
 
+    // Noise shader pass
     gl.useProgram(noiseProgram)
     gl.bindVertexArray(noiseVao)
     gl.bindTexture(gl.TEXTURE_2D, intermediateOpcoFbTexture)
@@ -386,7 +387,7 @@ onMounted(() => {
     gl.bindFramebuffer(gl.FRAMEBUFFER, null)
     gl.bindTexture(gl.TEXTURE_2D, null)
 
-    // Render opco's framebuffer framebuffer with lens distortion shader to another framebuffer
+    // Lens distortion shader pass
     gl.useProgram(lensDistortionProgram)
     gl.bindVertexArray(lensDistortionVao)
     gl.bindTexture(gl.TEXTURE_2D, noiseFbTexture)
@@ -397,7 +398,7 @@ onMounted(() => {
     gl.bindFramebuffer(gl.FRAMEBUFFER, null)
     gl.bindTexture(gl.TEXTURE_2D, null)
 
-    // Render intermediate framebuffer to screen with chromatic abberation shader
+    // Chromatic abberation shader pass
     gl.useProgram(chromaticAbberationProgram)
     gl.uniform1f(uTimeLoc, performance.now())
     gl.bindVertexArray(chromaticAbberationVao)
