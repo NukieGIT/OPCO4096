@@ -19,39 +19,23 @@ import {
   initGL,
   resizeCanvasToDisplaySize,
 } from '@/ts/webgl/util'
-import { initialize as initializeOPCO, opco } from '@/ts/wasm/OPCO4096'
-import { ArrayReader, ArrayType, ArrayWriter } from '@/ts/wasm/memory/array'
+
+/**
+ * Pushes the CPU framebuffer data to the GPU.
+ * @param fbArray The framebuffer data
+ * @returns false when the WebGL context is not initialized.
+ */
+type TickCpu = (fbArray: Uint8Array) => boolean
+
+const tickCpu = ref<TickCpu>(() => false)
+
+defineExpose({
+  tickCpu
+})
 
 const COMPONENT_NAME = getCurrentInstance()?.type.__name ?? 'UnknownComponent'
 
 const canvas = useTemplateRef<HTMLCanvasElement>('canvas')
-
-const rom = ref<Uint16Array>(new Uint16Array())
-
-const loadRomFromArrayBuffer = (buffer: ArrayBuffer) => {
-  const bytes = new Uint8Array(buffer)
-  const opcodes = new Uint16Array(bytes.length / 2)
-
-  for (let i = 0; i < opcodes.length; i++) {
-    const highByte = bytes[i * 2] ?? 0
-    const lowByte = bytes[i * 2 + 1] ?? 0
-
-    opcodes[i] = (highByte << 8) | lowByte
-  }
-
-  rom.value = opcodes
-
-  const romData = aw.write({ type: ArrayType.U16, data: opcodes })
-  const romReader = ar.readStruct(romData)
-
-  opco.initializeCpu(romReader.ptr, romReader.len)
-}
-
-await initializeOPCO()
-const aw = new ArrayWriter(opco.memory, opco)
-const ar = new ArrayReader(opco.memory)
-
-const opcoFbPtr = opco.getFramebuffer()
 
 interface Props {
   renderSettings?: {
@@ -85,11 +69,8 @@ const pixelArtTextureSetter = (gl: WebGL2RenderingContext) => {
 
 const createFrameBufferTexture = intermediateFramebufferTextureFactory(pixelArtTextureSetter)
 
-const lovelyhardcodedchip8ibmlogo = await fetch('logoibm.ch8').then((res) => res.arrayBuffer())
-loadRomFromArrayBuffer(lovelyhardcodedchip8ibmlogo)
 
 let rafId = 0
-let cpuTicker: number | undefined = undefined
 
 // Fullscreen quad and texture coordinates to draw opco framebuffer as texture to.
 // vec4 for positions, vec2 for uv coordinates
@@ -347,20 +328,14 @@ onMounted(() => {
   gl.bindFramebuffer(gl.FRAMEBUFFER, null)
   // #endregion
 
-  cpuTicker = setInterval(() => {
-    opco.tickCpu()
-    const fbData = ar.read(opcoFbPtr)
-    if (fbData.type !== ArrayType.U8) {
-      console.error(`[${COMPONENT_NAME}] Framebuffer data is not of type U8`)
-      return
-    }
-
+  tickCpu.value = (fbArray) => {
     gl.bindVertexArray(opcoFbVao)
     gl.bindTexture(gl.TEXTURE_2D, opcoFbTexture)
-    gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, 64, 32, gl.RED, gl.UNSIGNED_BYTE, fbData.data)
+    gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, 64, 32, gl.RED, gl.UNSIGNED_BYTE, fbArray)
     gl.bindTexture(gl.TEXTURE_2D, null)
     gl.bindVertexArray(null)
-  }, 1000 / 100) // 100Hz
+    return true
+  }
 
   let lastViewport = { vpW, vpH }
   const draw = () => {
@@ -532,7 +507,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   cancelAnimationFrame(rafId)
-  clearInterval(cpuTicker)
+  tickCpu.value = () => false
 })
 </script>
 
