@@ -30,7 +30,7 @@ void main() {
     float distToEdge = abs(distToEdgeX - distToEdgeY);
     float edgeSmoothingFactor = 0.3f;
     float colorDarkness = 0.06f;
-    inputDistord = vec4(min(edgeSmoothingFactor * distToEdge, colorDarkness), min(edgeSmoothingFactor * distToEdge, colorDarkness), min(edgeSmoothingFactor * distToEdge, colorDarkness), 1.0f);
+    inputDistord = vec4(min(edgeSmoothingFactor * distToEdge, colorDarkness), min(edgeSmoothingFactor * distToEdge, colorDarkness), min(edgeSmoothingFactor * distToEdge, colorDarkness), 0.0f);
   }
-  fragColor = vec4(inputDistord.r, inputDistord.g, inputDistord.b, 1.0f);
+  fragColor = vec4(inputDistord.r, inputDistord.g, inputDistord.b, inputDistord.a);
 }

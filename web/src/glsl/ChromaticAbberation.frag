@@ -14,6 +14,12 @@ float rand(vec2 co) {
 }
 
 void main() {
+  vec4 color = texture(uTexture, vTexCoord);
+  if (color.a == 0.0) {
+    color.a = 1.0;
+    fragColor = color;
+    return;
+  }
   const float multiplier = 0.0002;
   float vDist = abs(vTexCoord.y - 0.5);
   float hDist = abs(vTexCoord.x - 0.5);
