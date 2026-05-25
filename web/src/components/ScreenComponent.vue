@@ -5,8 +5,8 @@
 <script setup lang="ts">
 import { getCurrentInstance, onMounted, onUnmounted, ref, useTemplateRef } from 'vue'
 
-import vertexShaderSource from '@/glsl/OpcoR8FrameBuffer.vert?raw'
-import fragmentShaderSource from '@/glsl/OpcoR8FrameBuffer.frag?raw'
+import simplePosAndUvsVertexShaderSource from '@/glsl/SimplePosAndUvs.vert?raw'
+import bitSamplerFragmentShaderSource from '@/glsl/BitSampler.frag?raw'
 import chromaticAbberationFragmentShaderSource from '@/glsl/ChromaticAbberation.frag?raw'
 import lensDistortionFragmentShaderSource from '@/glsl/LensDistortion.frag?raw'
 import noiseFragmentShaderSource from '@/glsl/Noise.frag?raw'
@@ -111,8 +111,8 @@ onMounted(() => {
   }
   const gl = initGL(canvas.value)
 
-  const fullScreenVertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource)
-  const opcoFbFragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource)
+  const simplePosAndUvsVertexShader = createShader(gl, gl.VERTEX_SHADER, simplePosAndUvsVertexShaderSource)
+  const bitSamplerFragmentShader = createShader(gl, gl.FRAGMENT_SHADER, bitSamplerFragmentShaderSource)
 
   const chromaticAbberationFragmentShader = createShader(
     gl,
@@ -138,24 +138,24 @@ onMounted(() => {
     NoEffectFragmentShaderSource,
   )
 
-  const opcoFbprogram = createProgram(gl, fullScreenVertexShader, opcoFbFragmentShader)
+  const opcoProgram = createProgram(gl, simplePosAndUvsVertexShader, bitSamplerFragmentShader)
   const chromaticAbberationProgram = createProgram(
     gl,
-    fullScreenVertexShader,
+    simplePosAndUvsVertexShader,
     chromaticAbberationFragmentShader,
   )
 
   const lensDistortionProgram = createProgram(
     gl,
-    fullScreenVertexShader,
+    simplePosAndUvsVertexShader,
     lensDistortionFragmentShader,
   )
 
-  const noiseProgram = createProgram(gl, fullScreenVertexShader, noiseFragmentShader)
+  const noiseProgram = createProgram(gl, simplePosAndUvsVertexShader, noiseFragmentShader)
 
   const noEffectProgram = createProgram(
     gl,
-    fullScreenVertexShader,
+    simplePosAndUvsVertexShader,
     noEffectFragmentShader,
   )
 
@@ -163,8 +163,8 @@ onMounted(() => {
   const { vpX, vpY, vpW, vpH } = calcScaleFactor(canvas.value.width, canvas.value.height, 64, 32)
   gl.viewport(vpX, vpY, vpW, vpH)
 
-  const aPositionLoc = gl.getAttribLocation(opcoFbprogram, 'aPosition')
-  const aTexCoordLoc = gl.getAttribLocation(opcoFbprogram, 'aTexCoord')
+  const aPositionLoc = gl.getAttribLocation(opcoProgram, 'aPosition')
+  const aTexCoordLoc = gl.getAttribLocation(opcoProgram, 'aTexCoord')
   const uTimeLoc = gl.getUniformLocation(chromaticAbberationProgram, 'uTime')
 
   // #region OPCO framebuffer Vao
@@ -440,7 +440,7 @@ onMounted(() => {
 
     if (Object.values(renderSettings).every((setting) => !setting)) {
       // If all post processing settings are disabled, render opco framebuffer directly to screen without any shader passes.
-      gl.useProgram(opcoFbprogram)
+      gl.useProgram(opcoProgram)
       gl.bindVertexArray(opcoFbVao)
       gl.bindTexture(gl.TEXTURE_2D, opcoFbTexture)
       gl.viewport(vpX, vpY, vpW, vpH)
@@ -454,7 +454,7 @@ onMounted(() => {
 
 
     // OPCO framebuffer used as a texture
-    gl.useProgram(opcoFbprogram)
+    gl.useProgram(opcoProgram)
     gl.bindVertexArray(opcoFbVao)
     gl.bindTexture(gl.TEXTURE_2D, opcoFbTexture)
     gl.bindFramebuffer(gl.FRAMEBUFFER, opcoFbFbo)
