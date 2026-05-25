@@ -10,6 +10,7 @@ import fragmentShaderSource from '@/glsl/OpcoR8FrameBuffer.frag?raw'
 import chromaticAbberationFragmentShaderSource from '@/glsl/ChromaticAbberation.frag?raw'
 import lensDistortionFragmentShaderSource from '@/glsl/LensDistortion.frag?raw'
 import noiseFragmentShaderSource from '@/glsl/Noise.frag?raw'
+import NoEffectFragmentShaderSource from '@/glsl/NoEffect.frag?raw'
 
 import {
   calcScaleFactor,
@@ -51,6 +52,16 @@ const aw = new ArrayWriter(opco.memory, opco)
 const ar = new ArrayReader(opco.memory)
 
 const opcoFbPtr = opco.getFramebuffer()
+
+interface Props {
+  renderSettings?: {
+    enableChromaticAbberation: boolean
+    enableLensDistortion: boolean
+    enableNoise: boolean
+  }
+}
+
+const { renderSettings = { enableChromaticAbberation: true, enableLensDistortion: true, enableNoise: true } } = defineProps<Props>()
 
 function intermediateFramebufferTextureFactory(paramSetter: (gl: WebGL2RenderingContext) => void) {
   return (gl: WebGL2RenderingContext, width: number, height: number, internalFormat: number) => {
@@ -121,6 +132,12 @@ onMounted(() => {
     noiseFragmentShaderSource,
   )
 
+  const noEffectFragmentShader = createShader(
+    gl,
+    gl.FRAGMENT_SHADER,
+    NoEffectFragmentShaderSource,
+  )
+
   const opcoFbprogram = createProgram(gl, fullScreenVertexShader, opcoFbFragmentShader)
   const chromaticAbberationProgram = createProgram(
     gl,
@@ -135,6 +152,12 @@ onMounted(() => {
   )
 
   const noiseProgram = createProgram(gl, fullScreenVertexShader, noiseFragmentShader)
+
+  const noEffectProgram = createProgram(
+    gl,
+    fullScreenVertexShader,
+    noEffectFragmentShader,
+  )
 
   resizeCanvasToDisplaySize(canvas.value)
   const { vpX, vpY, vpW, vpH } = calcScaleFactor(canvas.value.width, canvas.value.height, 64, 32)
@@ -178,6 +201,7 @@ onMounted(() => {
   let intermediateOpcoFbTexture = createFrameBufferTexture(gl, vpW, vpH, gl.RGBA8)
   let lensDistortionFbTexture = createFrameBufferTexture(gl, vpW, vpH, gl.RGBA8)
   let noiseFbTexture = createFrameBufferTexture(gl, vpW, vpH, gl.RGBA8)
+  let chromaticAbberationFbTexture = createFrameBufferTexture(gl, vpW, vpH, gl.RGBA8)
 
   // #region chromatic abberation Vao
   const chromaticAbberationVao = gl.createVertexArray()
@@ -242,6 +266,27 @@ onMounted(() => {
   gl.bindVertexArray(null)
   // #endregion
 
+  // #region no effect Vao
+  const noEffectVao = gl.createVertexArray()
+  gl.bindVertexArray(noEffectVao)
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer)
+  gl.bufferData(gl.ARRAY_BUFFER, vertexData, gl.STATIC_DRAW)
+  gl.vertexAttribPointer(aPositionLoc, 4, gl.FLOAT, false, 6 * Float32Array.BYTES_PER_ELEMENT, 0)
+  gl.vertexAttribPointer(
+    aTexCoordLoc,
+    2,
+    gl.FLOAT,
+    false,
+    6 * Float32Array.BYTES_PER_ELEMENT,
+    4 * Float32Array.BYTES_PER_ELEMENT,
+  )
+  gl.enableVertexAttribArray(aPositionLoc)
+  gl.enableVertexAttribArray(aTexCoordLoc)
+
+  gl.bindVertexArray(null)
+  // #endregion
+
   // #region opco's framebuffer framebuffer setup
   const opcoFbFbo = gl.createFramebuffer()
   gl.bindFramebuffer(gl.FRAMEBUFFER, opcoFbFbo)
@@ -281,6 +326,21 @@ onMounted(() => {
     gl.COLOR_ATTACHMENT0,
     gl.TEXTURE_2D,
     noiseFbTexture,
+    0,
+  )
+
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+  // #endregion
+
+  // #region chromatic abberation framebuffer setup
+  const chromaticAbberationFbo = gl.createFramebuffer()
+  gl.bindFramebuffer(gl.FRAMEBUFFER, chromaticAbberationFbo)
+
+  gl.framebufferTexture2D(
+    gl.FRAMEBUFFER,
+    gl.COLOR_ATTACHMENT0,
+    gl.TEXTURE_2D,
+    chromaticAbberationFbTexture,
     0,
   )
 
@@ -359,11 +419,39 @@ onMounted(() => {
         )
         gl.bindFramebuffer(gl.FRAMEBUFFER, null)
 
+        gl.deleteTexture(chromaticAbberationFbTexture)
+        chromaticAbberationFbTexture = createFrameBufferTexture(gl, vpW, vpH, gl.RGBA8)
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER, chromaticAbberationFbo)
+        gl.framebufferTexture2D(
+          gl.FRAMEBUFFER,
+          gl.COLOR_ATTACHMENT0,
+          gl.TEXTURE_2D,
+          chromaticAbberationFbTexture,
+          0,
+        )
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+
         console.log(
           `[${COMPONENT_NAME}] Resized canvas and recreated intermediate framebuffer texture.`,
         )
       }
     }
+
+    if (Object.values(renderSettings).every((setting) => !setting)) {
+      // If all post processing settings are disabled, render opco framebuffer directly to screen without any shader passes.
+      gl.useProgram(opcoFbprogram)
+      gl.bindVertexArray(opcoFbVao)
+      gl.bindTexture(gl.TEXTURE_2D, opcoFbTexture)
+      gl.viewport(vpX, vpY, vpW, vpH)
+      gl.drawArrays(gl.TRIANGLES, 0, 6)
+      gl.bindTexture(gl.TEXTURE_2D, null)
+      gl.bindVertexArray(null)
+
+      rafId = requestAnimationFrame(draw)
+      return
+    }
+
 
     // OPCO framebuffer used as a texture
     gl.useProgram(opcoFbprogram)
@@ -375,34 +463,63 @@ onMounted(() => {
     gl.drawArrays(gl.TRIANGLES, 0, 6)
     gl.bindFramebuffer(gl.FRAMEBUFFER, null)
     gl.bindTexture(gl.TEXTURE_2D, null)
+    gl.bindVertexArray(null)
 
-    // Noise shader pass
-    gl.useProgram(noiseProgram)
-    gl.bindVertexArray(noiseVao)
-    gl.bindTexture(gl.TEXTURE_2D, intermediateOpcoFbTexture)
-    gl.bindFramebuffer(gl.FRAMEBUFFER, noiseFbo)
-    gl.clear(gl.COLOR_BUFFER_BIT)
-    gl.viewport(0, 0, vpW, vpH)
-    gl.drawArrays(gl.TRIANGLES, 0, 6)
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null)
-    gl.bindTexture(gl.TEXTURE_2D, null)
+    // Start post-processing from the rendered framebuffer output.
+    let lastTexture = intermediateOpcoFbTexture
 
-    // Lens distortion shader pass
-    gl.useProgram(lensDistortionProgram)
-    gl.bindVertexArray(lensDistortionVao)
-    gl.bindTexture(gl.TEXTURE_2D, noiseFbTexture)
-    gl.bindFramebuffer(gl.FRAMEBUFFER, lensDistortionFbo)
-    gl.clear(gl.COLOR_BUFFER_BIT)
-    gl.viewport(0, 0, vpW, vpH)
-    gl.drawArrays(gl.TRIANGLES, 0, 6)
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null)
-    gl.bindTexture(gl.TEXTURE_2D, null)
+    if (renderSettings.enableNoise) {
+      // Noise shader pass
+      gl.useProgram(noiseProgram)
+      gl.bindVertexArray(noiseVao)
+      gl.bindTexture(gl.TEXTURE_2D, lastTexture)
+      gl.bindFramebuffer(gl.FRAMEBUFFER, noiseFbo)
+      gl.clear(gl.COLOR_BUFFER_BIT)
+      gl.viewport(0, 0, vpW, vpH)
+      gl.drawArrays(gl.TRIANGLES, 0, 6)
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+      gl.bindTexture(gl.TEXTURE_2D, null)
+      gl.bindVertexArray(null)
 
-    // Chromatic abberation shader pass
-    gl.useProgram(chromaticAbberationProgram)
-    gl.uniform1f(uTimeLoc, performance.now())
-    gl.bindVertexArray(chromaticAbberationVao)
-    gl.bindTexture(gl.TEXTURE_2D, lensDistortionFbTexture)
+      lastTexture = noiseFbTexture
+    }
+
+    if (renderSettings.enableLensDistortion) {
+      // Lens distortion shader pass
+      gl.useProgram(lensDistortionProgram)
+      gl.bindVertexArray(lensDistortionVao)
+      gl.bindTexture(gl.TEXTURE_2D, lastTexture)
+      gl.bindFramebuffer(gl.FRAMEBUFFER, lensDistortionFbo)
+      gl.clear(gl.COLOR_BUFFER_BIT)
+      gl.viewport(0, 0, vpW, vpH)
+      gl.drawArrays(gl.TRIANGLES, 0, 6)
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+      gl.bindTexture(gl.TEXTURE_2D, null)
+      gl.bindVertexArray(null)
+
+      lastTexture = lensDistortionFbTexture
+    }
+
+    if (renderSettings.enableChromaticAbberation) {
+      // Chromatic abberation shader pass
+      gl.useProgram(chromaticAbberationProgram)
+      gl.uniform1f(uTimeLoc, performance.now())
+      gl.bindVertexArray(chromaticAbberationVao)
+      gl.bindTexture(gl.TEXTURE_2D, lastTexture)
+      gl.bindFramebuffer(gl.FRAMEBUFFER, chromaticAbberationFbo)
+      gl.clear(gl.COLOR_BUFFER_BIT)
+      gl.viewport(0, 0, vpW, vpH)
+      gl.drawArrays(gl.TRIANGLES, 0, 6)
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+      gl.bindTexture(gl.TEXTURE_2D, null)
+      gl.bindVertexArray(null)
+
+      lastTexture = chromaticAbberationFbTexture
+    }
+
+    gl.useProgram(noEffectProgram)
+    gl.bindVertexArray(noEffectVao)
+    gl.bindTexture(gl.TEXTURE_2D, lastTexture)
     gl.viewport(vpX, vpY, vpW, vpH)
     gl.drawArrays(gl.TRIANGLES, 0, 6)
     gl.bindTexture(gl.TEXTURE_2D, null)
