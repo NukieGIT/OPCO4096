@@ -30,6 +30,14 @@ export const OPCO4096ValidationObject: OPCO4096 = {
 
   getPC: function (): number {
     return PLACEHOLDER_FUNCTION_BODY()
+  },
+
+  setKey: function(): number {
+    return PLACEHOLDER_FUNCTION_BODY()
+  },
+
+  updateCpuTimers: function(): number {
+    return PLACEHOLDER_FUNCTION_BODY()
   }
 }
 
