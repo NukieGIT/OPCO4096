@@ -25,12 +25,12 @@ import {
  * @param fbArray The framebuffer data
  * @returns false when the WebGL context is not initialized.
  */
-type TickCpu = (fbArray: Uint8Array) => boolean
+type UpdateFramebuffer = (fbArray: Uint8Array) => boolean
 
-const tickCpu = ref<TickCpu>(() => false)
+const updateFramebuffer = ref<UpdateFramebuffer>(() => false)
 
 defineExpose({
-  tickCpu
+  updateFramebuffer
 })
 
 const COMPONENT_NAME = getCurrentInstance()?.type.__name ?? 'UnknownComponent'
@@ -328,7 +328,7 @@ onMounted(() => {
   gl.bindFramebuffer(gl.FRAMEBUFFER, null)
   // #endregion
 
-  tickCpu.value = (fbArray) => {
+  updateFramebuffer.value = (fbArray) => {
     gl.bindVertexArray(opcoFbVao)
     gl.bindTexture(gl.TEXTURE_2D, opcoFbTexture)
     gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, 64, 32, gl.RED, gl.UNSIGNED_BYTE, fbArray)
@@ -507,7 +507,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   cancelAnimationFrame(rafId)
-  tickCpu.value = () => false
+  updateFramebuffer.value = () => false
 })
 </script>
 
