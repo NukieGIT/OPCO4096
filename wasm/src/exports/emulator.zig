@@ -29,3 +29,15 @@ pub export fn setKey(key: u8, pressed: u8) void {
 pub export fn updateCpuTimers() u8 {
     return cpu_instance.updateTimers();
 }
+
+pub export fn getVRegistersPtr() u32 {
+    return @intFromPtr(&cpu_instance.v);
+}
+
+pub export fn getStackPtr() u32 {
+    return @intFromPtr(&cpu_instance.stack);
+}
+
+pub export fn getStackPointer() u8 {
+    return cpu_instance.sp;
+}

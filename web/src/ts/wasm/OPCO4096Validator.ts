@@ -21,10 +21,10 @@ export const OPCO4096ValidationObject: OPCO4096 = {
     return PLACEHOLDER_FUNCTION_BODY()
   },
 
-  initializeCpu: function (): number {
+  initializeCpu: function (_instructions_ptr: number, _instructions_len: number): void {
     return PLACEHOLDER_FUNCTION_BODY()
   },
-  tickCpu: function (): number {
+  tickCpu: function (): void {
     return PLACEHOLDER_FUNCTION_BODY()
   },
 
@@ -32,11 +32,23 @@ export const OPCO4096ValidationObject: OPCO4096 = {
     return PLACEHOLDER_FUNCTION_BODY()
   },
 
-  setKey: function(): number {
+  setKey: function (_key: number, _pressed: number): void {
     return PLACEHOLDER_FUNCTION_BODY()
   },
 
-  updateCpuTimers: function(): number {
+  updateCpuTimers: function (): number {
+    return PLACEHOLDER_FUNCTION_BODY()
+  },
+
+  getVRegistersPtr: function (): number {
+    return PLACEHOLDER_FUNCTION_BODY()
+  },
+
+  getStackPtr: function (): number {
+    return PLACEHOLDER_FUNCTION_BODY()
+  },
+
+  getStackPointer: function (): number {
     return PLACEHOLDER_FUNCTION_BODY()
   }
 }

@@ -33,17 +33,47 @@
       <input type="file" accept=".ch8" @change="onRomSelected" />
     </div>
     <div class="right-panel crt-border">
-      <h2>ROM Hex Dump</h2>
+      <div class="panel-section">
+        <h2>ROM Hex Dump</h2>
 
-      <div class="hex-grid">
-        <span
-          v-for="(value, index) in hexDump"
-          :key="index"
-          :class="['hex-cell', { active: index === currentRomIndex } ]"
-        >
-          {{ value }}
-        </span>
+        <div class="hex-grid">
+          <span
+            v-for="(value, index) in hexDump"
+            :key="index"
+            :class="['hex-cell', { active: index === currentRomIndex } ]"
+          >
+            {{ value }}
+          </span>
+        </div>
       </div>
+    </div>
+  </div>
+
+  <div class="registers-stack-panel crt-border">
+    <div class="panel-section">
+      <h2>V Registers</h2>
+      <div class="register-grid">
+        <div
+          class="register-cell"
+          v-for="(value, idx) in vRegisters"
+          :key="`v-${idx}`"
+          :class="{ active: idx === currentRegisterIndex }"
+        >
+          <span class="register-label">V{{ idx.toString(16).toUpperCase().padStart(1, '0') }}</span>
+          <span>{{ value.toString(16).toUpperCase().padStart(2, '0') }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <h2>Stack</h2>
+      <div class="stack-grid">
+        <div class="stack-cell" v-for="(value, idx) in stackRegisters" :key="`s-${idx}`">
+          <span class="stack-label">{{ idx }}</span>
+          <span>{{ value.toString(16).toUpperCase().padStart(4, '0') }}</span>
+        </div>
+      </div>
+      <div class="stack-meta">SP: {{ stackPointer }}</div>
     </div>
   </div>
 </template>
@@ -75,6 +105,9 @@ const onRomSelected = async (event: Event) => {
 }
 
 const rom = ref<Uint16Array>(new Uint16Array())
+const vRegisters = ref<number[]>(new Array(16).fill(0))
+const stackRegisters = ref<number[]>(new Array(16).fill(0))
+const stackPointer = ref(0)
 
 const loadRomFromArrayBuffer = (buffer: ArrayBuffer) => {
   const bytes = new Uint8Array(buffer)
@@ -96,6 +129,7 @@ const loadRomFromArrayBuffer = (buffer: ArrayBuffer) => {
 }
 
 const currentRomIndex = ref(0)
+const currentRegisterIndex = ref<number | null>(null)
 
 let audioContext: AudioContext | null = null
 let oscillator: OscillatorNode | null = null
@@ -129,6 +163,28 @@ const stopBeep = () => {
 
 // Standard stable instructions rate for comfortable gameplay (e.g., Space Invaders, Pong)
 const instructionsPerSecond = 500 
+
+const getHighlightedRegisterIndex = (instruction: number): number | null => {
+  const opcode = instruction & 0xF000
+  const x = (instruction & 0x0F00) >> 8
+
+  switch (opcode) {
+    case 0x3000:
+    case 0x4000:
+    case 0x5000:
+    case 0x6000:
+    case 0x7000:
+    case 0x8000:
+    case 0x9000:
+    case 0xC000:
+    case 0xD000:
+    case 0xE000:
+    case 0xF000:
+      return x
+    default:
+      return null
+  }
+}
 
 const hexDump = computed(() => {
   const values: string[] = []
@@ -185,6 +241,8 @@ function startRender() {
         if (typeof opco.getPC === 'function') {
           const pc = opco.getPC()
           currentRomIndex.value = Math.max(0, Math.min(rom.value.length - 1, Math.floor((pc - 0x200) / 2)))
+          const currentInstruction = rom.value[currentRomIndex.value]
+          currentRegisterIndex.value = currentInstruction !== undefined ? getHighlightedRegisterIndex(currentInstruction) : null
         }
       }
 
@@ -203,6 +261,22 @@ function startRender() {
             }
           }
         }
+      }
+
+      if (typeof opco.getVRegistersPtr === 'function') {
+        const vPtr = opco.getVRegistersPtr()
+        const view = new Uint8Array(opco.memory.buffer, vPtr, 16)
+        vRegisters.value = Array.from(view)
+      }
+
+      if (typeof opco.getStackPtr === 'function') {
+        const stackPtrVal = opco.getStackPtr()
+        const view = new Uint16Array(opco.memory.buffer, stackPtrVal, 16)
+        stackRegisters.value = Array.from(view)
+      }
+
+      if (typeof opco.getStackPointer === 'function') {
+        stackPointer.value = opco.getStackPointer()
       }
 
       // 3. Process Graphic Frame Buffers
@@ -304,6 +378,18 @@ onUnmounted(() => cancelAnimationFrame(frameId))
   overflow-y: auto;
 }
 
+.registers-stack-panel {
+  width: 100%;
+  border: 1px solid white;
+  padding: 12px;
+  background: #111;
+  margin-top: 20px;
+}
+
+.panel-section {
+  margin-bottom: 20px;
+}
+
 h1,
 h2 {
   color: white;
@@ -330,5 +416,46 @@ h2 {
   background: #00ff88;
   color: #08120c;
   font-weight: 700;
+}
+
+.register-cell.active {
+  background: #ff9f43;
+  color: #08120c;
+  font-weight: 700;
+}
+
+.registers-panel {
+  margin-top: 24px;
+}
+
+.register-grid,
+.stack-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.register-cell,
+.stack-cell {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px;
+  border-radius: 4px;
+  background: #161616;
+  color: #00ff88;
+  font-family: monospace;
+}
+
+.register-label,
+.stack-label {
+  color: #8cffb3;
+  font-weight: 700;
+}
+
+.stack-meta {
+  margin-top: 12px;
+  color: #ffffff;
+  font-size: 14px;
 }
 </style>

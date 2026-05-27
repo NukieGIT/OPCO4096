@@ -32,5 +32,8 @@ export interface WasmOpcoCpu {
   tickCpu(): void;
   getPC(): number;
   setKey(key: number, pressed: number): void;
-  updateCpuTimers(): number
+  updateCpuTimers(): number;
+  getVRegistersPtr(): number;
+  getStackPtr(): number;
+  getStackPointer(): number;
 }
