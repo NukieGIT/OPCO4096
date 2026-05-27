@@ -191,6 +191,30 @@ pub const Chip8CPU = struct {
             0xA000 => { // LD I, addr
                 self.i = nnn;
             },
+            0x9000 => { // SNE Vx, Vy
+                if ((instruction & 0x000F) == 0) {
+                    if (self.v[x] != self.v[y]) {
+                        self.pc += 2;
+                    }
+                } else {
+                    @panic("Invalid opcode format for 0x9000 family!");
+                }
+            },
+            0xB000 => { // JP V0, addr
+                self.pc = nnn + self.v[0];
+            },
+            0xC000 => { // RND Vx, byte
+                const state = struct {
+                    var seed: u64 = 0x123456789ABCDEF0; // Fallback initial seed
+                };
+                // Mix the existing seed with the program counter to add a bit of variance
+                state.seed = (state.seed ^ self.pc) +% 1;
+
+                var prng = std.Random.DefaultPrng.init(state.seed);
+                const rand_byte = prng.random().int(u8);
+
+                self.v[x] = rand_byte & nn;
+            },
             0xD000 => { // DRW Vx, Vy, nibble
                 // Writing this instruction was a straight nightmare
                 const x_cord = self.v[x]; // Column
@@ -219,7 +243,69 @@ pub const Chip8CPU = struct {
                     }
                 }
             },
-            else => {},
+            0xE000 => {
+                switch (nn) {
+                    0x9E => { // SKP Vx
+                        // TODO Implement input/keyboard array check
+                        // if (self.keypad[self.v[x]] == 1) self.pc += 2;
+                    },
+                    0xA1 => { // SKNP Vx
+                        // TODO Implement input/keyboard array check
+                        // if (self.keypad[self.v[x]] == 0) self.pc += 2;
+                    },
+                    else => @panic("Unknown 0xE000 sub-opcode!"),
+                }
+            },
+            0xF000 => {
+                switch (nn) {
+                    0x07 => { // LD Vx, DT
+                        self.v[x] = self.delay_timer;
+                    },
+                    0x0A => { // LD Vx, K
+                        // Acknowledge a keypress (blocking instruction)
+                        // TODO Check if any key is pressed. If not, step PC back to repeat
+                        // self.pc -= 2; // (Or omit incrementing to halt cycle until press)
+                    },
+                    0x15 => { // LD DT, Vx
+                        self.delay_timer = self.v[x];
+                    },
+                    0x18 => { // LD ST, Vx
+                        self.sound_timer = self.v[x];
+                    },
+                    0x1E => { // ADD I, Vx
+                        self.i = self.i +% self.v[x];
+                    },
+                    0x29 => { // LD F, Vx
+                        // Point I to the 5-byte font sprite character matching V[x]
+                        // Each font character occupies exactly 5 bytes in memory
+                        self.i = @as(u16, self.v[x]) * 5;
+                    },
+                    0x33 => { // LD B, Vx
+                        // Binary-Coded Decimal (BCD) conversion
+                        var value = self.v[x];
+                        self.memory[self.i + 2] = value % 10; // Ones place
+                        value /= 10;
+                        self.memory[self.i + 1] = value % 10; // Tens place
+                        value /= 10;
+                        self.memory[self.i] = value % 10; // Hundreds place
+                    },
+                    0x55 => { // LD [I], Vx
+                        // Stores registers V0 through Vx in memory starting at address I
+                        for (0..x + 1) |reg_idx| {
+                            self.memory[self.i + @as(u16, @intCast(reg_idx))] = self.v[reg_idx];
+                        }
+                        // NOTE Modern CHIP-8 leaves I unchanged. Quirk configs may increment it.
+                    },
+                    0x65 => { // LD Vx, [I]
+                        // Loads registers V0 through Vx from memory starting at address I
+                        for (0..x + 1) |reg_idx| {
+                            self.v[reg_idx] = self.memory[self.i + @as(u16, @intCast(reg_idx))];
+                        }
+                    },
+                    else => @panic("Unknown 0xF000 sub-opcode!"),
+                }
+            },
+            else => @panic("Completely unknown opcode format!"),
         }
     }
 };
