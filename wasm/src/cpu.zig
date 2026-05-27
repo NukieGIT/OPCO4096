@@ -40,21 +40,23 @@ pub const Chip8CPU = struct {
     delay_timer: u8 = 0,
     sound_timer: u8 = 0,
     v: [16]u8 = [_]u8{0} ** 16, // VF is for flags (carry, collision, etc)
+    // 16-key keypad state (0 = up, 1 = down)
+    keypad: [16]u8 = [_]u8{0} ** 16,
 
     fn loadFontSet(self: *Chip8CPU) void {
-        for (FONT_SET, 0..) |_, i| {
-            self.memory[i] = FONT_SET[i];
+        for (FONT_SET, 0..) |_, idx| {
+            self.memory[idx] = FONT_SET[idx];
         }
     }
 
     /// Loads the instructions into ram using big-endian.
     fn loadInstructions(self: *Chip8CPU, hex: []u16) void {
-        for (hex, 0..) |value, i| {
+        for (hex, 0..) |value, idx| {
             const LSB_value: u8 = @truncate(value & 0x00FF);
             const MSB_value: u8 = @truncate(value >> 8 & 0x00FF);
             // Saving instructions in big-endian
-            self.memory[ROM_START_ADDRESS + (i * 2)] = MSB_value;
-            self.memory[ROM_START_ADDRESS + (i * 2) + 1] = LSB_value;
+            self.memory[ROM_START_ADDRESS + (idx * 2)] = MSB_value;
+            self.memory[ROM_START_ADDRESS + (idx * 2) + 1] = LSB_value;
         }
     }
 
@@ -69,10 +71,35 @@ pub const Chip8CPU = struct {
         self.loadInstructions(instructions);
     }
 
+    /// Set a key state (pressed/released) from the environment (JS host)
+    pub fn setKey(self: *Chip8CPU, key: u8, pressed: bool) void {
+        if (key < 16) {
+            self.keypad[@intCast(key)] = if (pressed) 1 else 0;
+        }
+    }
+
+    /// Returns the first pressed key index if any, otherwise null
+    fn firstPressedKey(self: *Chip8CPU) ?u8 {
+        for (0..16) |idx| {
+            if (self.keypad[idx] == 1) return @intCast(idx);
+        }
+        return null;
+    }
+
+    /// This must be called at a constant rate of 60Hz (once every 16.67ms)
+    pub fn updateTimers(self: *Chip8CPU) void {
+        if (self.delay_timer > 0) {
+            self.delay_timer -= 1;
+        }
+        if (self.sound_timer > 0) {
+            self.sound_timer -= 1;
+            // TODO: Trigger a beep sound in your frontend if sound_timer > 0
+        }
+    }
+
     /// The fetch, decode and execute cycle
     pub fn tick(self: *Chip8CPU) void {
         // Fetch
-
         // Load the instruction in big-endian
         const MSB_instruction = self.memory[self.pc];
         const LSB_instruction = self.memory[self.pc + 1];
@@ -130,7 +157,6 @@ pub const Chip8CPU = struct {
                 }
             },
             0x5000 => { // SE Vx, Vy
-                // ROM instruction corruption check
                 if ((instruction & 0x000F) == 0) {
                     if (self.v[x] == self.v[y]) {
                         self.pc += 2;
@@ -143,7 +169,7 @@ pub const Chip8CPU = struct {
                 self.v[x] = nn;
             },
             0x7000 => { // ADD Vx, byte
-                self.v[x] += nn;
+                self.v[x] = self.v[x] +% nn;
             },
             0x8000 => {
                 switch (n) {
@@ -246,12 +272,14 @@ pub const Chip8CPU = struct {
             0xE000 => {
                 switch (nn) {
                     0x9E => { // SKP Vx
-                        // TODO Implement input/keyboard array check
-                        // if (self.keypad[self.v[x]] == 1) self.pc += 2;
+                        if (self.keypad[@intCast(self.v[x])] == 1) {
+                            self.pc += 2;
+                        }
                     },
                     0xA1 => { // SKNP Vx
-                        // TODO Implement input/keyboard array check
-                        // if (self.keypad[self.v[x]] == 0) self.pc += 2;
+                        if (self.keypad[@intCast(self.v[x])] == 0) {
+                            self.pc += 2;
+                        }
                     },
                     else => @panic("Unknown 0xE000 sub-opcode!"),
                 }
@@ -262,9 +290,13 @@ pub const Chip8CPU = struct {
                         self.v[x] = self.delay_timer;
                     },
                     0x0A => { // LD Vx, K
-                        // Acknowledge a keypress (blocking instruction)
-                        // TODO Check if any key is pressed. If not, step PC back to repeat
-                        // self.pc -= 2; // (Or omit incrementing to halt cycle until press)
+                        // Unpacking the ?u8 optional safely inside the switch
+                        if (self.firstPressedKey()) |k| {
+                            self.v[x] = k;
+                        } else {
+                            // No key pressed -> lock execution context on this command
+                            self.pc -= 2;
+                        }
                     },
                     0x15 => { // LD DT, Vx
                         self.delay_timer = self.v[x];
@@ -276,28 +308,22 @@ pub const Chip8CPU = struct {
                         self.i = self.i +% self.v[x];
                     },
                     0x29 => { // LD F, Vx
-                        // Point I to the 5-byte font sprite character matching V[x]
-                        // Each font character occupies exactly 5 bytes in memory
                         self.i = @as(u16, self.v[x]) * 5;
                     },
                     0x33 => { // LD B, Vx
-                        // Binary-Coded Decimal (BCD) conversion
                         var value = self.v[x];
-                        self.memory[self.i + 2] = value % 10; // Ones place
+                        self.memory[self.i + 2] = value % 10;
                         value /= 10;
-                        self.memory[self.i + 1] = value % 10; // Tens place
+                        self.memory[self.i + 1] = value % 10;
                         value /= 10;
-                        self.memory[self.i] = value % 10; // Hundreds place
+                        self.memory[self.i] = value % 10;
                     },
                     0x55 => { // LD [I], Vx
-                        // Stores registers V0 through Vx in memory starting at address I
                         for (0..x + 1) |reg_idx| {
                             self.memory[self.i + @as(u16, @intCast(reg_idx))] = self.v[reg_idx];
                         }
-                        // NOTE Modern CHIP-8 leaves I unchanged. Quirk configs may increment it.
                     },
                     0x65 => { // LD Vx, [I]
-                        // Loads registers V0 through Vx from memory starting at address I
                         for (0..x + 1) |reg_idx| {
                             self.v[reg_idx] = self.memory[self.i + @as(u16, @intCast(reg_idx))];
                         }

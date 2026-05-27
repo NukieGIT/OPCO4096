@@ -31,4 +31,6 @@ export interface WasmOpcoCpu {
   initializeCpu(instructions_ptr: number, instructions_len: number): void;
   tickCpu(): void;
   getPC(): number;
+  setKey(key: number, pressed: number): void;
+  updateCpuTimers(): void
 }

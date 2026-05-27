@@ -97,7 +97,8 @@ const loadRomFromArrayBuffer = (buffer: ArrayBuffer) => {
 
 const currentRomIndex = ref(0)
 
-const instructionsPerSecond = 100 // overall CPU instruction rate (typical CHIP-8 ~400-700)
+// Standard stable instructions rate for comfortable gameplay (e.g., Space Invaders, Pong)
+const instructionsPerSecond = 500 
 
 const hexDump = computed(() => {
   const values: string[] = []
@@ -133,12 +134,17 @@ function startRender() {
 
   let lastTime = performance.now()
   let instrAccumulator = 0
+  
+  // Timer Accumulator tracks 60Hz milestones (exactly 1 tick every 16.67ms)
+  let timerAccumulator = 0
+  const TIMER_RATE_HZ = 60
 
   const draw = (now = performance.now()) => {
     try {
       const delta = now - lastTime
       lastTime = now
 
+      // 1. Process CPU Instruction Cycles
       instrAccumulator += (instructionsPerSecond * delta) / 1000
       const toRun = Math.floor(instrAccumulator)
       if (toRun > 0) {
@@ -152,6 +158,19 @@ function startRender() {
         }
       }
 
+      // 2. Process Hardware Timers (Strictly 60Hz)
+      timerAccumulator += (TIMER_RATE_HZ * delta) / 1000
+      const timersToTick = Math.floor(timerAccumulator)
+      if (timersToTick > 0) {
+        timerAccumulator -= timersToTick
+        for (let i = 0; i < timersToTick; i++) {
+          if (typeof opco.updateCpuTimers === 'function') {
+            opco.updateCpuTimers()
+          }
+        }
+      }
+
+      // 3. Process Graphic Frame Buffers
       const fbPtr = opco.getFramebuffer()
       const fbData = ar.read(fbPtr)
 
@@ -212,8 +231,6 @@ onUnmounted(() => cancelAnimationFrame(frameId))
   border-radius: 4px;
   cursor: pointer;
   transition: background-color 0.2s ease, color 0.2s ease;
-
-  /* Remove the CRT look from text to improve readability */
   text-shadow: none !important;
   animation: none !important;
   letter-spacing: normal;
