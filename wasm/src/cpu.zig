@@ -87,14 +87,17 @@ pub const Chip8CPU = struct {
     }
 
     /// This must be called at a constant rate of 60Hz (once every 16.67ms)
-    pub fn updateTimers(self: *Chip8CPU) void {
+    pub fn updateTimers(self: *Chip8CPU) u8 {
         if (self.delay_timer > 0) {
             self.delay_timer -= 1;
         }
+
+        const should_beep: u8 = if (self.sound_timer > 0) 1 else 0;
         if (self.sound_timer > 0) {
             self.sound_timer -= 1;
-            // TODO: Trigger a beep sound in your frontend if sound_timer > 0
         }
+
+        return should_beep;
     }
 
     /// The fetch, decode and execute cycle

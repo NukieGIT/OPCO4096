@@ -26,6 +26,6 @@ pub export fn setKey(key: u8, pressed: u8) void {
     cpu_instance.setKey(key, pressed != 0);
 }
 
-pub export fn updateCpuTimers() void {
-    cpu_instance.updateTimers();
+pub export fn updateCpuTimers() u8 {
+    return cpu_instance.updateTimers();
 }

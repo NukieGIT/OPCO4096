@@ -97,6 +97,36 @@ const loadRomFromArrayBuffer = (buffer: ArrayBuffer) => {
 
 const currentRomIndex = ref(0)
 
+let audioContext: AudioContext | null = null
+let oscillator: OscillatorNode | null = null
+let gainNode: GainNode | null = null
+
+const initAudio = () => {
+  if (audioContext) return
+
+  audioContext = new (window.AudioContext ?? (window as any).webkitAudioContext)()
+  gainNode = audioContext.createGain()
+  gainNode.gain.value = 0
+  gainNode.connect(audioContext.destination)
+
+  oscillator = audioContext.createOscillator()
+  oscillator.type = 'square'
+  oscillator.frequency.value = 880
+  oscillator.connect(gainNode)
+  oscillator.start()
+}
+
+const playBeep = () => {
+  if (!audioContext) initAudio()
+  if (!gainNode || !audioContext) return
+  gainNode.gain.setTargetAtTime(0.12, audioContext.currentTime, 0.01)
+}
+
+const stopBeep = () => {
+  if (!gainNode || !audioContext) return
+  gainNode.gain.setTargetAtTime(0, audioContext.currentTime, 0.01)
+}
+
 // Standard stable instructions rate for comfortable gameplay (e.g., Space Invaders, Pong)
 const instructionsPerSecond = 500 
 
@@ -165,7 +195,12 @@ function startRender() {
         timerAccumulator -= timersToTick
         for (let i = 0; i < timersToTick; i++) {
           if (typeof opco.updateCpuTimers === 'function') {
-            opco.updateCpuTimers()
+            const soundActive = opco.updateCpuTimers()
+            if (soundActive > 0) {
+              playBeep()
+            } else {
+              stopBeep()
+            }
           }
         }
       }
