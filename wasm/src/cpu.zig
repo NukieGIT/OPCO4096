@@ -85,8 +85,7 @@ pub const Chip8CPU = struct {
         const opcode = instruction & 0xF000;
         const nnn = instruction & 0x0FFF; // 12-bit immediate memory address
         const nn: u8 = @truncate(instruction & 0x00FF); // 8-bit immediate number
-        // n is commented out because it's unused. That will change after I implement more instructions
-        //const n = opcode & 0x000F;  4-bit number
+        const n = instruction & 0x000F; // 4-bit number
         const x = (instruction & 0x0F00) >> 8; // Register lookup
         const y = (instruction & 0x00F0) >> 4; // Register lookup
 
@@ -98,18 +97,24 @@ pub const Chip8CPU = struct {
                         self.frame_buffer = [_]u8{0} ** (64 * 32);
                     },
                     0x00EE => { // RET
-                        if (self.sp == 0) { @panic("Stack Underflow!"); }
+                        if (self.sp == 0) {
+                            @panic("Stack Underflow!");
+                        }
                         self.sp -= 1;
                         self.pc = self.stack[self.sp];
                     },
-                    else => { @panic("Unknown opcode!"); },
+                    else => {
+                        @panic("Unknown opcode!");
+                    },
                 }
             },
             0x1000 => { // JP addr
                 self.pc = nnn;
             },
             0x2000 => { // CALL addr
-                if (self.sp >= 16) { @panic("Stack Overflow!"); }
+                if (self.sp >= 16) {
+                    @panic("Stack Overflow!");
+                }
                 self.stack[self.sp] = self.pc;
                 self.sp += 1;
                 self.pc = nnn;
@@ -140,6 +145,49 @@ pub const Chip8CPU = struct {
             0x7000 => { // ADD Vx, byte
                 self.v[x] += nn;
             },
+            0x8000 => {
+                switch (n) {
+                    0 => { // LD Vx, Vy
+                        self.v[x] = self.v[y];
+                    },
+                    1 => { // OR Vx, Vy
+                        self.v[x] = self.v[x] | self.v[y];
+                    },
+                    2 => { // AND Vx, Vy
+                        self.v[x] = self.v[x] & self.v[y];
+                    },
+                    3 => { // XOR Vx, Vy
+                        self.v[x] = self.v[x] ^ self.v[y];
+                    },
+                    4 => { // ADD Vx, Vy
+                        const sum = @as(u16, self.v[x]) + @as(u16, self.v[y]);
+                        const carry: u8 = if (sum > 0xFF) 1 else 0;
+                        self.v[x] = @truncate(sum);
+                        self.v[0xF] = carry;
+                    },
+                    5 => { // SUB Vx, Vy
+                        const not_borrow: u8 = if (self.v[x] >= self.v[y]) 1 else 0;
+                        self.v[x] = self.v[x] -% self.v[y];
+                        self.v[0xF] = not_borrow;
+                    },
+                    6 => { // SHR Vx {, Vy}
+                        const lsb = self.v[x] & 1;
+                        self.v[x] >>= 1;
+                        self.v[0xF] = lsb;
+                    },
+                    7 => { // SUBN Vx, Vy
+                        const not_borrow: u8 = if (self.v[y] >= self.v[x]) 1 else 0;
+                        self.v[x] = self.v[y] -% self.v[x];
+                        self.v[0xF] = not_borrow;
+                    },
+                    0xE => { // SHL Vx {, Vy}
+                        const msb = (self.v[x] >> 7) & 1;
+                        self.v[x] <<= 1;
+                        self.v[0xF] = msb;
+                    },
+                    else => @panic("Unknown 0x8000 sub-opcode!"),
+                }
+            },
             0xA000 => { // LD I, addr
                 self.i = nnn;
             },
@@ -147,7 +195,6 @@ pub const Chip8CPU = struct {
                 // Writing this instruction was a straight nightmare
                 const x_cord = self.v[x]; // Column
                 const y_cord = self.v[y]; // Row
-                const n = instruction & 0x000F; // Amount of bytes from memory to read, starting at the address in I
                 self.v[0xF] = 0; // Collision register
                 // For each row
                 for (0..n) |n_byte| {
