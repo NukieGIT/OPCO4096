@@ -154,6 +154,10 @@ monitorForElements({
     }
   },
   onDrop({ source, location }) {
+    if (dndPreviewRef.value) {
+      dndPreviewRef.value.isVisible = false;
+    }
+
     const destination = location.current.dropTargets[0]
     if (!destination) {
       // if dropped outside of any drop targets
@@ -171,11 +175,6 @@ monitorForElements({
       return;
     }
 
-    if (!dndPreviewRef.value) {
-      return;
-    }
-
-    dndPreviewRef.value.isVisible = false;
     snapAction();
   }
 })
