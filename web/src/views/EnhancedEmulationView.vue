@@ -156,6 +156,7 @@ monitorForElements({
   onDrop({ source, location }) {
     if (dndPreviewRef.value) {
       dndPreviewRef.value.isVisible = false;
+      snapAction = () => { }
     }
 
     const destination = location.current.dropTargets[0]
