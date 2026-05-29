@@ -24,7 +24,7 @@ import type { LayoutNode } from '@/components/tileable-layout/types';
 import TileableLayout from '@/components/tileable-layout/TileableLayout.vue';
 import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { ref, useTemplateRef, type Component } from 'vue';
-import { swapNodes } from '@/components/tileable-layout/layoutManager';
+import { moveNode, swapNodes } from '@/components/tileable-layout/layoutManager';
 import DragDropPreview from '@/components/DragDropPreview.vue';
 
 const dndPreviewRef = useTemplateRef('dndPreview')
@@ -70,6 +70,8 @@ function clientCoordsToElementCoords(clientX: number, clientY: number, element: 
   return { x: clientX - rect.left, y: clientY - rect.top, xNorm: (clientX - rect.left) / rect.width, yNorm: (clientY - rect.top) / rect.height }
 }
 
+let snapAction: () => void = () => { }
+
 const dragSnapThreshold = 0.25;
 
 monitorForElements({
@@ -103,17 +105,21 @@ monitorForElements({
     if (yNorm > dragSnapThreshold && yNorm < (1 - dragSnapThreshold)) {
       if (xNorm < dragSnapThreshold) {
         // snap to left
-        console.log('snap to left')
         dndPreviewRef.value.moveTo(elemRect.left, elemRect.top);
         dndPreviewRef.value.resizeTo(elemRect.left + elemRect.width / 2, elemRect.bottom);
         dndPreviewRef.value.isVisible = true;
+        snapAction = () => {
+          moveNode(layout.value, sourceId, destinationId, 0, 'row')
+        }
         return;
       } else if (xNorm > (1 - dragSnapThreshold)) {
         // snap to right
-        console.log('snap to right')
         dndPreviewRef.value.moveTo(elemRect.left + elemRect.width / 2, elemRect.top);
         dndPreviewRef.value.resizeTo(elemRect.right, elemRect.bottom);
         dndPreviewRef.value.isVisible = true;
+        snapAction = () => {
+          moveNode(layout.value, sourceId, destinationId, 1, 'row')
+        }
         return;
       }
     }
@@ -121,25 +127,31 @@ monitorForElements({
     else if (xNorm > dragSnapThreshold && xNorm < (1 - dragSnapThreshold)) {
       if (yNorm < dragSnapThreshold) {
         // snap to top
-        console.log('snap to top')
         dndPreviewRef.value.moveTo(elemRect.left, elemRect.top);
         dndPreviewRef.value.resizeTo(elemRect.right, elemRect.bottom - elemRect.height / 2);
         dndPreviewRef.value.isVisible = true;
+        snapAction = () => {
+          moveNode(layout.value, sourceId, destinationId, 0, 'column')
+        }
         return;
       } else if (yNorm > (1 - dragSnapThreshold)) {
         // snap to bottom
-        console.log('snap to bottom')
         dndPreviewRef.value.moveTo(elemRect.left, elemRect.bottom - elemRect.height / 2);
         dndPreviewRef.value.resizeTo(elemRect.right, elemRect.bottom);
         dndPreviewRef.value.isVisible = true;
+        snapAction = () => {
+          moveNode(layout.value, sourceId, destinationId, 1, 'column')
+        }
         return;
       }
     }
     // full snap
-    console.log('full snap')
     dndPreviewRef.value.moveTo(elemRect.left, elemRect.top);
     dndPreviewRef.value.resizeTo(elemRect.right, elemRect.bottom);
     dndPreviewRef.value.isVisible = true;
+    snapAction = () => {
+      swapNodes(layout.value, sourceId, destinationId)
+    }
   },
   onDrop({ source, location }) {
     const destination = location.current.dropTargets[0]
@@ -164,7 +176,7 @@ monitorForElements({
     }
 
     dndPreviewRef.value.isVisible = false;
-    swapNodes(layout.value, sourceId, destinationId);
+    snapAction();
   }
 })
 
