@@ -65,6 +65,13 @@ function isId(id: unknown): id is string {
   return typeof id === 'string';
 }
 
+function clientCoordsToElementCoords(clientX: number, clientY: number, element: Element) {
+  const rect = element.getBoundingClientRect()
+  return { x: clientX - rect.left, y: clientY - rect.top, xNorm: (clientX - rect.left) / rect.width, yNorm: (clientY - rect.top) / rect.height }
+}
+
+const dragSnapThreshold = 0.25;
+
 monitorForElements({
   onDrag({ source, location }) {
     const destination = location.current.dropTargets[0]
@@ -88,7 +95,50 @@ monitorForElements({
       return;
     }
 
-    dndPreviewRef.value.moveTo(destination.element)
+    const { xNorm, yNorm } = clientCoordsToElementCoords(location.current.input.clientX, location.current.input.clientY, destination.element)
+
+    const elemRect = destination.element.getBoundingClientRect()
+
+    // Horizontal snap
+    if (yNorm > dragSnapThreshold && yNorm < (1 - dragSnapThreshold)) {
+      if (xNorm < dragSnapThreshold) {
+        // snap to left
+        console.log('snap to left')
+        dndPreviewRef.value.moveTo(elemRect.left, elemRect.top);
+        dndPreviewRef.value.resizeTo(elemRect.left + elemRect.width / 2, elemRect.bottom);
+        dndPreviewRef.value.isVisible = true;
+        return;
+      } else if (xNorm > (1 - dragSnapThreshold)) {
+        // snap to right
+        console.log('snap to right')
+        dndPreviewRef.value.moveTo(elemRect.left + elemRect.width / 2, elemRect.top);
+        dndPreviewRef.value.resizeTo(elemRect.right, elemRect.bottom);
+        dndPreviewRef.value.isVisible = true;
+        return;
+      }
+    }
+    // Vertical snap
+    else if (xNorm > dragSnapThreshold && xNorm < (1 - dragSnapThreshold)) {
+      if (yNorm < dragSnapThreshold) {
+        // snap to top
+        console.log('snap to top')
+        dndPreviewRef.value.moveTo(elemRect.left, elemRect.top);
+        dndPreviewRef.value.resizeTo(elemRect.right, elemRect.bottom - elemRect.height / 2);
+        dndPreviewRef.value.isVisible = true;
+        return;
+      } else if (yNorm > (1 - dragSnapThreshold)) {
+        // snap to bottom
+        console.log('snap to bottom')
+        dndPreviewRef.value.moveTo(elemRect.left, elemRect.bottom - elemRect.height / 2);
+        dndPreviewRef.value.resizeTo(elemRect.right, elemRect.bottom);
+        dndPreviewRef.value.isVisible = true;
+        return;
+      }
+    }
+    // full snap
+    console.log('full snap')
+    dndPreviewRef.value.moveTo(elemRect.left, elemRect.top);
+    dndPreviewRef.value.resizeTo(elemRect.right, elemRect.bottom);
     dndPreviewRef.value.isVisible = true;
   },
   onDrop({ source, location }) {

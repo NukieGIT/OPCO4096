@@ -19,17 +19,20 @@ const heightCss = computed(() => `${height.value}px`);
 const topCss = computed(() => `${top.value}px`);
 const leftCss = computed(() => `${left.value}px`);
 
-function moveTo(element: Element) {
-  const rect = element.getBoundingClientRect();
-  width.value = rect.width;
-  height.value = rect.height;
-  top.value = rect.top;
-  left.value = rect.left;
+function moveTo(x: number, y: number) {
+  top.value = y;
+  left.value = x;
+}
+
+function resizeTo(x: number, y: number) {
+  width.value = Math.abs(left.value - x);
+  height.value = Math.abs(top.value - y);
 }
 
 defineExpose({
   isVisible,
-  moveTo
+  moveTo,
+  resizeTo
 })
 
 </script>
