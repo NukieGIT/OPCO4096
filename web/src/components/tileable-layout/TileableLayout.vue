@@ -25,6 +25,7 @@ defineSlots<{ leaf(props: { id: string }): void }>()
 const { node } = defineProps<{ node: LayoutNode }>()
 
 const gutterRef = useTemplateRef('gutter')
+let baseGutterDiff = 0;
 const gutterDiff = ref(0);
 const gutterDiffCss = computed(() => gutterDiff.value + 'px')
 
@@ -44,6 +45,9 @@ watch(gutterRef, (newVal) => {
       // does not drop on a drop target. we want the drag to finish immediately
       preventUnhandled.start()
     },
+    onDragStart() {
+      baseGutterDiff = gutterDiff.value;
+    },
     onDrag({ location }) {
       if (node.type === 'leaf') {
         console.warn('This should never happen: Attempted to drag gutter on a leaf node, ignoring.')
@@ -51,10 +55,10 @@ watch(gutterRef, (newVal) => {
       }
       if (node.direction === 'row') {
         const diffX = location.current.input.clientX - location.initial.input.clientX
-        gutterDiff.value =+ diffX
+        gutterDiff.value = baseGutterDiff + diffX
       } else {
         const diffY = location.current.input.clientY - location.initial.input.clientY
-        gutterDiff.value =+ diffY
+        gutterDiff.value = baseGutterDiff + diffY
       }
     },
     onDrop() {
