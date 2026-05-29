@@ -65,7 +65,7 @@ defineExpose({
 .gutter {
   position: relative;
   background: transparent;
-  cursor: col-resize;
+  cursor: ew-resize;
   transition: background-color 120ms ease;
   transition-delay: 0ms;
 }
@@ -78,7 +78,7 @@ defineExpose({
 .gutter[data-direction='column'] {
   grid-column: 1;
   grid-row: 2;
-  cursor: row-resize;
+  cursor: ns-resize;
 }
 
 .gutter::before {
