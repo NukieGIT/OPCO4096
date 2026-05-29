@@ -5,7 +5,7 @@
     <template #leaf="{ id }">
       <DragDropPane :id="id">
         <template #header>
-          <h3>{{ panes[id]?.title || id }}</h3>
+          <p>{{ panes[id]?.title || id }}</p>
         </template>
         <component v-if="panes[id]" :is="panes[id].is" v-bind="panes[id].props" :id="id" />
       </DragDropPane>

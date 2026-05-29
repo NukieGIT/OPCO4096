@@ -1,9 +1,9 @@
 <template>
 
 <div ref="pane" class="draggable-pane">
-  <h2 ref="header" class="header">
+  <div ref="header" class="header">
     <slot name="header">Draggable Pane Header</slot>
-  </h2>
+  </div>
   <div class="content">
     <slot>Draggable Pane Content</slot>
   </div>
@@ -95,7 +95,7 @@ defineExpose({
   top: 0;
   cursor: move;
   background-color: #2e2e2e;
-  padding: 8px;
+  padding: 4px;
 }
 
 .content {
