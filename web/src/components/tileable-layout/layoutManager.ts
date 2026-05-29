@@ -1,4 +1,4 @@
-import type { LayoutNode, Split, SplitDirection } from '@/components/tileable-layout/types';
+import type { LayoutNode, Leaf, Split, SplitDirection } from '@/components/tileable-layout/types';
 
 export type NodeLocation = {
 	parent: Split | null;
@@ -76,6 +76,19 @@ export function removeNode(root: LayoutNode, targetId: string) {
 
     if (parentLoc && parentLoc.parent) {
       parentLoc.parent.children[parentLoc.index] = sibling;
+    } else {
+      // If the parent is the root, we replace its contents with the sibling's contents
+      if (sibling.type === 'leaf') {
+        const leafRoot = root as Leaf;
+        leafRoot.type = 'leaf';
+        leafRoot.id = sibling.id;
+      } else {
+        const splitRoot = root as Split;
+        splitRoot.type = 'split';
+        splitRoot.id = sibling.id;
+        splitRoot.direction = sibling.direction;
+        splitRoot.children = sibling.children;
+      }
     }
   }
 }
