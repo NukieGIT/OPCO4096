@@ -46,6 +46,7 @@ const { node } = defineProps<{ node: LayoutNode }>()
   background: transparent;
   cursor: col-resize;
   transition: background-color 120ms ease;
+  transition-delay: 0ms;
 }
 
 .split[data-direction='row'] > .gutter {
@@ -81,6 +82,7 @@ const { node } = defineProps<{ node: LayoutNode }>()
 
 .gutter:hover {
   background: color-mix(in oklab, var(--gutter-hover) 60%, transparent);
+  transition-delay: 300ms;
 }
 
 .gutter:active {

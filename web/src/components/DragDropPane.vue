@@ -85,7 +85,7 @@ defineExpose({
 <style scoped>
 
 .draggable-pane {
-  border: 1px solid #ccc;
+  border: 1px dotted #ccc;
   overflow: auto;
   height: 100%;
 }
