@@ -108,6 +108,7 @@ defineExpose({
 
 .gutter:active {
   background: color-mix(in oklab, var(--gutter-hover) 85%, transparent);
+  transition-delay: 0ms;
 }
 
 </style>
