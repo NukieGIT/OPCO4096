@@ -11,6 +11,7 @@
       </DragDropPane>
     </template>
   </TileableLayout>
+  <DragDropPreview ref="dndPreview" />
 </main>
 
 </template>
@@ -22,8 +23,11 @@ import TestComp2 from '@/components/TestComp2.vue';
 import type { LayoutNode } from '@/components/tileable-layout/types';
 import TileableLayout from '@/components/tileable-layout/TileableLayout.vue';
 import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
-import { onMounted, ref, type Component } from 'vue';
+import { ref, useTemplateRef, type Component } from 'vue';
 import { swapNodes } from '@/components/tileable-layout/layoutManager';
+import DragDropPreview from '@/components/DragDropPreview.vue';
+
+const dndPreviewRef = useTemplateRef('dndPreview')
 
 interface PaneDefinition {
   [key: string]: {
@@ -62,33 +66,57 @@ function isId(id: unknown): id is string {
 }
 
 monitorForElements({
-  onDrag({ location }) {
+  onDrag({ source, location }) {
+    const destination = location.current.dropTargets[0]
+    if (!destination) {
+      // if dragged outside of any drop targets
+      return;
+    }
 
+    const destinationId = destination.data.id;
+    const sourceId = source.data.id;
+
+    if (!isId(sourceId) || !isId(destinationId)) {
+      return;
+    }
+
+    if (sourceId === destinationId) {
+      return;
+    }
+
+    if (!dndPreviewRef.value) {
+      return;
+    }
+
+    dndPreviewRef.value.moveTo(destination.element)
+    dndPreviewRef.value.isVisible = true;
   },
   onDrop({ source, location }) {
-      const destination = location.current.dropTargets[0]
-      if (!destination) {
-        // if dropped outside of any drop targets
-        return;
-      }
+    const destination = location.current.dropTargets[0]
+    if (!destination) {
+      // if dropped outside of any drop targets
+      return;
+    }
 
-      const destinationId = destination.data.id;
-      const sourceId = source.data.id;
+    const destinationId = destination.data.id;
+    const sourceId = source.data.id;
 
-      if (!isId(sourceId) || !isId(destinationId)) {
-        return;
-      }
+    if (!isId(sourceId) || !isId(destinationId)) {
+      return;
+    }
 
-      swapNodes(layout.value, sourceId, destinationId);
+    if (sourceId === destinationId) {
+      return;
+    }
+
+    if (!dndPreviewRef.value) {
+      return;
+    }
+
+    dndPreviewRef.value.isVisible = false;
+    swapNodes(layout.value, sourceId, destinationId);
   }
 })
-
-onMounted(() => {
-
-
-
-})
-
 
 </script>
 
