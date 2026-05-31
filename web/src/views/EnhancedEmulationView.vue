@@ -102,57 +102,49 @@ monitorForElements({
 
     const elemRect = destination.element.getBoundingClientRect()
 
-    // Horizontal snap
-    if (yNorm > dragSnapThreshold && yNorm < (1 - dragSnapThreshold)) {
-      if (xNorm < dragSnapThreshold) {
-        // snap to left
-        dndPreviewRef.value.moveTo(elemRect.left, elemRect.top);
-        dndPreviewRef.value.resizeTo(elemRect.left + elemRect.width / 2, elemRect.bottom);
-        dndPreviewRef.value.isVisible = true;
-        snapAction = () => {
-          moveNode(layout.value, sourceId, destinationId, 0, 'row')
-        }
-        return;
-      } else if (xNorm > (1 - dragSnapThreshold)) {
-        // snap to right
-        dndPreviewRef.value.moveTo(elemRect.left + elemRect.width / 2, elemRect.top);
-        dndPreviewRef.value.resizeTo(elemRect.right, elemRect.bottom);
-        dndPreviewRef.value.isVisible = true;
-        snapAction = () => {
-          moveNode(layout.value, sourceId, destinationId, 1, 'row')
-        }
-        return;
-      }
+    // Prioritize left/right snaps when pointer is near horizontal edges.
+    if (xNorm < dragSnapThreshold) {
+      // snap to left
+      dndPreviewRef.value.moveTo(elemRect.left, elemRect.top);
+      dndPreviewRef.value.resizeTo(elemRect.left + elemRect.width / 2, elemRect.bottom);
+      dndPreviewRef.value.isVisible = true;
+      snapAction = () => moveNode(layout.value, sourceId, destinationId, 0, 'row')
+      return;
     }
-    // Vertical snap
-    else if (xNorm > dragSnapThreshold && xNorm < (1 - dragSnapThreshold)) {
-      if (yNorm < dragSnapThreshold) {
-        // snap to top
-        dndPreviewRef.value.moveTo(elemRect.left, elemRect.top);
-        dndPreviewRef.value.resizeTo(elemRect.right, elemRect.bottom - elemRect.height / 2);
-        dndPreviewRef.value.isVisible = true;
-        snapAction = () => {
-          moveNode(layout.value, sourceId, destinationId, 0, 'column')
-        }
-        return;
-      } else if (yNorm > (1 - dragSnapThreshold)) {
-        // snap to bottom
-        dndPreviewRef.value.moveTo(elemRect.left, elemRect.bottom - elemRect.height / 2);
-        dndPreviewRef.value.resizeTo(elemRect.right, elemRect.bottom);
-        dndPreviewRef.value.isVisible = true;
-        snapAction = () => {
-          moveNode(layout.value, sourceId, destinationId, 1, 'column')
-        }
-        return;
-      }
+
+    if (xNorm > (1 - dragSnapThreshold)) {
+      // snap to right
+      dndPreviewRef.value.moveTo(elemRect.left + elemRect.width / 2, elemRect.top);
+      dndPreviewRef.value.resizeTo(elemRect.right, elemRect.bottom);
+      dndPreviewRef.value.isVisible = true;
+      snapAction = () => moveNode(layout.value, sourceId, destinationId, 1, 'row')
+      return;
     }
+
+    // If pointer is horizontally near the middle, consider top/bottom snaps.
+    if (yNorm < dragSnapThreshold) {
+      // snap to top
+      dndPreviewRef.value.moveTo(elemRect.left, elemRect.top);
+      dndPreviewRef.value.resizeTo(elemRect.right, elemRect.top + elemRect.height / 2);
+      dndPreviewRef.value.isVisible = true;
+      snapAction = () => moveNode(layout.value, sourceId, destinationId, 0, 'column')
+      return;
+    }
+
+    if (yNorm > (1 - dragSnapThreshold)) {
+      // snap to bottom
+      dndPreviewRef.value.moveTo(elemRect.left, elemRect.top + elemRect.height / 2);
+      dndPreviewRef.value.resizeTo(elemRect.right, elemRect.bottom);
+      dndPreviewRef.value.isVisible = true;
+      snapAction = () => moveNode(layout.value, sourceId, destinationId, 1, 'column')
+      return;
+    }
+
     // full snap
     dndPreviewRef.value.moveTo(elemRect.left, elemRect.top);
     dndPreviewRef.value.resizeTo(elemRect.right, elemRect.bottom);
     dndPreviewRef.value.isVisible = true;
-    snapAction = () => {
-      swapNodes(layout.value, sourceId, destinationId)
-    }
+    snapAction = () => swapNodes(layout.value, sourceId, destinationId)
   },
   onDrop({ source, location }) {
     if (dndPreviewRef.value) {
