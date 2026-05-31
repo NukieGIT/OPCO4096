@@ -26,6 +26,7 @@ html {
 }
 
 .crt-border,
+button,
 input {
   border: 1px dashed var(--crt-border); /* dotted also looks good */
   box-shadow:
