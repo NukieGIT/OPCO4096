@@ -17,11 +17,6 @@ const router = createRouter({
       // which is lazy-loaded when the route is visited.
       component: () => import('../views/EmulationView.vue'),
     },
-    {
-      path: '/stylized-emulation',
-      name: 'stylized-emulation',
-      component: () => import('../views/StylizedEmulationView.vue'),
-    },
   ],
 })
 
