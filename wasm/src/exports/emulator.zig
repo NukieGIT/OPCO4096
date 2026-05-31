@@ -20,3 +20,24 @@ pub export fn tickCpu() void {
 pub export fn getPC() u16 {
     return cpu_instance.pc;
 }
+
+// Keyboard bridge: allow the host to set key state (0..15)
+pub export fn setKey(key: u8, pressed: u8) void {
+    cpu_instance.setKey(key, pressed != 0);
+}
+
+pub export fn updateCpuTimers() u8 {
+    return cpu_instance.updateTimers();
+}
+
+pub export fn getVRegistersPtr() u32 {
+    return @intFromPtr(&cpu_instance.v);
+}
+
+pub export fn getStackPtr() u32 {
+    return @intFromPtr(&cpu_instance.stack);
+}
+
+pub export fn getStackPointer() u8 {
+    return cpu_instance.sp;
+}

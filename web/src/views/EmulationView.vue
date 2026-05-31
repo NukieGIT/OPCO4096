@@ -18,9 +18,9 @@
       ></canvas>
 
       <div class="controls-panel">
-        <button 
-          :class="['start-btn', { 'running': isRunning }]" 
-          :disabled="rom.length === 0 || isRunning" 
+        <button
+          :class="['start-btn', { 'running': isRunning }]"
+          :disabled="rom.length === 0 || isRunning"
           @click="startRender"
         >
           {{ isRunning ? 'Running...' : 'Start Execution' }}
@@ -33,17 +33,47 @@
       <input type="file" accept=".ch8" @change="onRomSelected" />
     </div>
     <div class="right-panel crt-border">
-      <h2>ROM Hex Dump</h2>
+      <div class="panel-section">
+        <h2>ROM Hex Dump</h2>
 
-      <div class="hex-grid">
-        <span
-          v-for="(value, index) in hexDump"
-          :key="index"
-          :class="['hex-cell', { active: index === currentRomIndex } ]"
-        >
-          {{ value }}
-        </span>
+        <div class="hex-grid">
+          <span
+            v-for="(value, index) in hexDump"
+            :key="index"
+            :class="['hex-cell', { active: index === currentRomIndex } ]"
+          >
+            {{ value }}
+          </span>
+        </div>
       </div>
+    </div>
+  </div>
+
+  <div class="registers-stack-panel crt-border">
+    <div class="panel-section">
+      <h2>V Registers</h2>
+      <div class="register-grid">
+        <div
+          class="register-cell"
+          v-for="(value, idx) in vRegisters"
+          :key="`v-${idx}`"
+          :class="{ active: idx === currentRegisterIndex }"
+        >
+          <span class="register-label">V{{ idx.toString(16).toUpperCase().padStart(1, '0') }}</span>
+          <span>{{ value.toString(16).toUpperCase().padStart(2, '0') }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <h2>Stack</h2>
+      <div class="stack-grid">
+        <div class="stack-cell" v-for="(value, idx) in stackRegisters" :key="`s-${idx}`">
+          <span class="stack-label">{{ idx }}</span>
+          <span>{{ value.toString(16).toUpperCase().padStart(4, '0') }}</span>
+        </div>
+      </div>
+      <div class="stack-meta">SP: {{ stackPointer }}</div>
     </div>
   </div>
 </template>
@@ -75,6 +105,9 @@ const onRomSelected = async (event: Event) => {
 }
 
 const rom = ref<Uint16Array>(new Uint16Array())
+const vRegisters = ref<number[]>(Array.from<number>({ length: 16 }).fill(0))
+const stackRegisters = ref<number[]>(Array.from<number>({ length: 16 }).fill(0))
+const stackPointer = ref(0)
 
 const loadRomFromArrayBuffer = (buffer: ArrayBuffer) => {
   const bytes = new Uint8Array(buffer)
@@ -83,12 +116,12 @@ const loadRomFromArrayBuffer = (buffer: ArrayBuffer) => {
   for (let i = 0; i < opcodes.length; i++) {
     const highByte = bytes[i * 2] ?? 0
     const lowByte = bytes[i * 2 + 1] ?? 0
-    
+
     opcodes[i] = (highByte << 8) | lowByte
   }
-  
+
   rom.value = opcodes
-  
+
   const romData = aw.write({ type: ArrayType.U16, data: opcodes })
   const romReader = ar.readStruct(romData)
 
@@ -96,8 +129,62 @@ const loadRomFromArrayBuffer = (buffer: ArrayBuffer) => {
 }
 
 const currentRomIndex = ref(0)
+const currentRegisterIndex = ref<number | null>(null)
 
-const instructionsPerSecond = 100 // overall CPU instruction rate (typical CHIP-8 ~400-700)
+let audioContext: AudioContext | null = null
+let oscillator: OscillatorNode | null = null
+let gainNode: GainNode | null = null
+
+const initAudio = () => {
+  if (audioContext) return
+
+  audioContext = new (window.AudioContext)()
+  gainNode = audioContext.createGain()
+  gainNode.gain.value = 0
+  gainNode.connect(audioContext.destination)
+
+  oscillator = audioContext.createOscillator()
+  oscillator.type = 'square'
+  oscillator.frequency.value = 880
+  oscillator.connect(gainNode)
+  oscillator.start()
+}
+
+const playBeep = () => {
+  if (!audioContext) initAudio()
+  if (!gainNode || !audioContext) return
+  gainNode.gain.setTargetAtTime(0.12, audioContext.currentTime, 0.01)
+}
+
+const stopBeep = () => {
+  if (!gainNode || !audioContext) return
+  gainNode.gain.setTargetAtTime(0, audioContext.currentTime, 0.01)
+}
+
+// Standard stable instructions rate for comfortable gameplay (e.g., Space Invaders, Pong)
+const instructionsPerSecond = 500
+
+const getHighlightedRegisterIndex = (instruction: number): number | null => {
+  const opcode = instruction & 0xF000
+  const x = (instruction & 0x0F00) >> 8
+
+  switch (opcode) {
+    case 0x3000:
+    case 0x4000:
+    case 0x5000:
+    case 0x6000:
+    case 0x7000:
+    case 0x8000:
+    case 0x9000:
+    case 0xC000:
+    case 0xD000:
+    case 0xE000:
+    case 0xF000:
+      return x
+    default:
+      return null
+  }
+}
 
 const hexDump = computed(() => {
   const values: string[] = []
@@ -118,7 +205,7 @@ let frameId: number
 const isRunning = ref(false)
 
 function startRender() {
-  if (isRunning.value) return 
+  if (isRunning.value) return
 
   const canvas = canvasRef.value
   if (!canvas) return
@@ -134,11 +221,16 @@ function startRender() {
   let lastTime = performance.now()
   let instrAccumulator = 0
 
+  // Timer Accumulator tracks 60Hz milestones (exactly 1 tick every 16.67ms)
+  let timerAccumulator = 0
+  const TIMER_RATE_HZ = 60
+
   const draw = (now = performance.now()) => {
     try {
       const delta = now - lastTime
       lastTime = now
 
+      // 1. Process CPU Instruction Cycles
       instrAccumulator += (instructionsPerSecond * delta) / 1000
       const toRun = Math.floor(instrAccumulator)
       if (toRun > 0) {
@@ -149,9 +241,45 @@ function startRender() {
         if (typeof opco.getPC === 'function') {
           const pc = opco.getPC()
           currentRomIndex.value = Math.max(0, Math.min(rom.value.length - 1, Math.floor((pc - 0x200) / 2)))
+          const currentInstruction = rom.value[currentRomIndex.value]
+          currentRegisterIndex.value = currentInstruction !== undefined ? getHighlightedRegisterIndex(currentInstruction) : null
         }
       }
 
+      // 2. Process Hardware Timers (Strictly 60Hz)
+      timerAccumulator += (TIMER_RATE_HZ * delta) / 1000
+      const timersToTick = Math.floor(timerAccumulator)
+      if (timersToTick > 0) {
+        timerAccumulator -= timersToTick
+        for (let i = 0; i < timersToTick; i++) {
+          if (typeof opco.updateCpuTimers === 'function') {
+            const soundActive = opco.updateCpuTimers()
+            if (soundActive > 0) {
+              playBeep()
+            } else {
+              stopBeep()
+            }
+          }
+        }
+      }
+
+      if (typeof opco.getVRegistersPtr === 'function') {
+        const vPtr = opco.getVRegistersPtr()
+        const view = new Uint8Array(opco.memory.buffer, vPtr, 16)
+        vRegisters.value = Array.from(view)
+      }
+
+      if (typeof opco.getStackPtr === 'function') {
+        const stackPtrVal = opco.getStackPtr()
+        const view = new Uint16Array(opco.memory.buffer, stackPtrVal, 16)
+        stackRegisters.value = Array.from(view)
+      }
+
+      if (typeof opco.getStackPointer === 'function') {
+        stackPointer.value = opco.getStackPointer()
+      }
+
+      // 3. Process Graphic Frame Buffers
       const fbPtr = opco.getFramebuffer()
       const fbData = ar.read(fbPtr)
 
@@ -212,8 +340,6 @@ onUnmounted(() => cancelAnimationFrame(frameId))
   border-radius: 4px;
   cursor: pointer;
   transition: background-color 0.2s ease, color 0.2s ease;
-
-  /* Remove the CRT look from text to improve readability */
   text-shadow: none !important;
   animation: none !important;
   letter-spacing: normal;
@@ -252,6 +378,18 @@ onUnmounted(() => cancelAnimationFrame(frameId))
   overflow-y: auto;
 }
 
+.registers-stack-panel {
+  width: 100%;
+  border: 1px solid white;
+  padding: 12px;
+  background: #111;
+  margin-top: 20px;
+}
+
+.panel-section {
+  margin-bottom: 20px;
+}
+
 h1,
 h2 {
   color: white;
@@ -278,5 +416,46 @@ h2 {
   background: #00ff88;
   color: #08120c;
   font-weight: 700;
+}
+
+.register-cell.active {
+  background: #ff9f43;
+  color: #08120c;
+  font-weight: 700;
+}
+
+.registers-panel {
+  margin-top: 24px;
+}
+
+.register-grid,
+.stack-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.register-cell,
+.stack-cell {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px;
+  border-radius: 4px;
+  background: #161616;
+  color: #00ff88;
+  font-family: monospace;
+}
+
+.register-label,
+.stack-label {
+  color: #8cffb3;
+  font-weight: 700;
+}
+
+.stack-meta {
+  margin-top: 12px;
+  color: #ffffff;
+  font-size: 14px;
 }
 </style>
