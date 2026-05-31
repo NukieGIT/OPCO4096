@@ -30,7 +30,7 @@ type UpdateFramebuffer = (fbArray: Uint8Array) => boolean
 const updateFramebuffer = ref<UpdateFramebuffer>(() => false)
 
 defineExpose({
-  updateFramebuffer
+  updateFramebuffer,
 })
 
 const COMPONENT_NAME = getCurrentInstance()?.type.__name ?? 'UnknownComponent'
@@ -45,7 +45,13 @@ interface Props {
   }
 }
 
-const { renderSettings = { enableChromaticAbberation: true, enableLensDistortion: true, enableNoise: true } } = defineProps<Props>()
+const {
+  renderSettings = {
+    enableChromaticAbberation: true,
+    enableLensDistortion: true,
+    enableNoise: true,
+  },
+} = defineProps<Props>()
 
 function intermediateFramebufferTextureFactory(paramSetter: (gl: WebGL2RenderingContext) => void) {
   return (gl: WebGL2RenderingContext, width: number, height: number, internalFormat: number) => {
@@ -69,7 +75,6 @@ const pixelArtTextureSetter = (gl: WebGL2RenderingContext) => {
 
 const createFrameBufferTexture = intermediateFramebufferTextureFactory(pixelArtTextureSetter)
 
-
 let rafId = 0
 
 // Fullscreen quad and texture coordinates to draw opco framebuffer as texture to.
@@ -92,8 +97,16 @@ onMounted(() => {
   }
   const gl = initGL(canvas.value)
 
-  const simplePosAndUvsVertexShader = createShader(gl, gl.VERTEX_SHADER, simplePosAndUvsVertexShaderSource)
-  const bitSamplerFragmentShader = createShader(gl, gl.FRAGMENT_SHADER, bitSamplerFragmentShaderSource)
+  const simplePosAndUvsVertexShader = createShader(
+    gl,
+    gl.VERTEX_SHADER,
+    simplePosAndUvsVertexShaderSource,
+  )
+  const bitSamplerFragmentShader = createShader(
+    gl,
+    gl.FRAGMENT_SHADER,
+    bitSamplerFragmentShaderSource,
+  )
 
   const chromaticAbberationFragmentShader = createShader(
     gl,
@@ -107,17 +120,9 @@ onMounted(() => {
     lensDistortionFragmentShaderSource,
   )
 
-  const noiseFragmentShader = createShader(
-    gl,
-    gl.FRAGMENT_SHADER,
-    noiseFragmentShaderSource,
-  )
+  const noiseFragmentShader = createShader(gl, gl.FRAGMENT_SHADER, noiseFragmentShaderSource)
 
-  const noEffectFragmentShader = createShader(
-    gl,
-    gl.FRAGMENT_SHADER,
-    NoEffectFragmentShaderSource,
-  )
+  const noEffectFragmentShader = createShader(gl, gl.FRAGMENT_SHADER, NoEffectFragmentShaderSource)
 
   const opcoProgram = createProgram(gl, simplePosAndUvsVertexShader, bitSamplerFragmentShader)
   const chromaticAbberationProgram = createProgram(
@@ -134,11 +139,7 @@ onMounted(() => {
 
   const noiseProgram = createProgram(gl, simplePosAndUvsVertexShader, noiseFragmentShader)
 
-  const noEffectProgram = createProgram(
-    gl,
-    simplePosAndUvsVertexShader,
-    noEffectFragmentShader,
-  )
+  const noEffectProgram = createProgram(gl, simplePosAndUvsVertexShader, noEffectFragmentShader)
 
   resizeCanvasToDisplaySize(canvas.value)
   const { vpX, vpY, vpW, vpH } = calcScaleFactor(canvas.value.width, canvas.value.height, 64, 32)
@@ -302,13 +303,7 @@ onMounted(() => {
   const noiseFbo = gl.createFramebuffer()
   gl.bindFramebuffer(gl.FRAMEBUFFER, noiseFbo)
 
-  gl.framebufferTexture2D(
-    gl.FRAMEBUFFER,
-    gl.COLOR_ATTACHMENT0,
-    gl.TEXTURE_2D,
-    noiseFbTexture,
-    0,
-  )
+  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, noiseFbTexture, 0)
 
   gl.bindFramebuffer(gl.FRAMEBUFFER, null)
   // #endregion
@@ -366,7 +361,6 @@ onMounted(() => {
         )
         gl.bindFramebuffer(gl.FRAMEBUFFER, null)
 
-
         gl.deleteTexture(lensDistortionFbTexture)
         lensDistortionFbTexture = createFrameBufferTexture(gl, vpW, vpH, gl.RGBA8)
 
@@ -379,7 +373,6 @@ onMounted(() => {
           0,
         )
         gl.bindFramebuffer(gl.FRAMEBUFFER, null)
-
 
         gl.deleteTexture(noiseFbTexture)
         noiseFbTexture = createFrameBufferTexture(gl, vpW, vpH, gl.RGBA8)
@@ -426,7 +419,6 @@ onMounted(() => {
       rafId = requestAnimationFrame(draw)
       return
     }
-
 
     // OPCO framebuffer used as a texture
     gl.useProgram(opcoProgram)
