@@ -16,6 +16,7 @@
     "format": "prettier --write --experimental-cli --cache-location node_modules/.cache/prettier-cache.json src/"
   },
   "dependencies": {
+    "@atlaskit/pragmatic-drag-and-drop": "^1.8.1",
     "@vueuse/core": "^14.2.1",
     "pinia": "^3.0.4",
     "vue": "^3.5.31",
