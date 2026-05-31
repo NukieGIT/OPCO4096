@@ -40,13 +40,13 @@ const gutterDiffCss = computed(() => {
   --gutter-line: rgba(255, 255, 255, 0.25);
   --gutter-hover: rgb(0, 153, 255);
   display: grid;
-  grid-template-columns: calc(50% + v-bind(gutterDiffCss)) var(--gutter-size) calc(50% - v-bind(gutterDiffCss));
+  grid-template-columns: calc(50% + v-bind(gutterDiffCss) - var(--gutter-size) / 2) var(--gutter-size) calc(50% - v-bind(gutterDiffCss) - var(--gutter-size) / 2);
   grid-template-rows: 1fr;
   height: 100%;
 }
 
 .split[data-direction='column'] {
   grid-template-columns: 1fr;
-  grid-template-rows: calc(50% + v-bind(gutterDiffCss)) var(--gutter-size) calc(50% - v-bind(gutterDiffCss));
+  grid-template-rows: calc(50% + v-bind(gutterDiffCss) - var(--gutter-size) / 2) var(--gutter-size) calc(50% - v-bind(gutterDiffCss) - var(--gutter-size) / 2);
 }
 </style>
