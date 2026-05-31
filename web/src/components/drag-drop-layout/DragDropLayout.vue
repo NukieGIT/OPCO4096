@@ -22,15 +22,7 @@ import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/ad
 import { useTemplateRef } from 'vue'
 import { moveNode, swapNodes } from '@/components/tileable-layout/layoutManager'
 import type { LayoutNode } from '@/components/tileable-layout/types'
-import type { Component } from 'vue'
-
-interface PaneDefinition {
-  [key: string]: {
-    is: Component
-    props: Record<string, unknown>
-    title?: string
-  }
-}
+import type { PaneDefinition } from '@/components/drag-drop-layout/types'
 
 const {
   layout,
