@@ -18,6 +18,6 @@ export const usePaneStateStore = defineStore('paneState', () => {
   return {
     panes,
     ensure,
-    get
+    get,
   }
 })

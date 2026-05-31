@@ -1,11 +1,9 @@
 <template>
-
-<div>
-  <p>This is TestComp2 with name: {{ customName }}</p>
-  <button @click="onClick">Click me</button>
-  <p>Button clicked {{ count }} times</p>
-</div>
-
+  <div>
+    <p>This is TestComp2 with name: {{ customName }}</p>
+    <button @click="onClick">Click me</button>
+    <p>Button clicked {{ count }} times</p>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -28,11 +26,6 @@ const count = computed(() => state.value.count)
 function onClick() {
   state.value.count += 1
 }
-
 </script>
 
-<style scoped>
-
-
-
-</style>
+<style scoped></style>

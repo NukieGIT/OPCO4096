@@ -1,10 +1,8 @@
 <template>
-
-<div>
-  <p>This is TestComp1 with name: {{ customName }}</p>
-  <input v-model="text" type="text">
-</div>
-
+  <div>
+    <p>This is TestComp1 with name: {{ customName }}</p>
+    <input v-model="text" type="text" />
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -26,13 +24,8 @@ const text = computed({
   get: () => state.value.text,
   set: (value: string) => {
     state.value.text = value
-  }
+  },
 })
-
 </script>
 
-<style scoped>
-
-
-
-</style>
+<style scoped></style>

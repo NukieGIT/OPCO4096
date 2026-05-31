@@ -14,7 +14,7 @@
 </template>
 
 <script setup lang="ts">
-import PaneGutter from '@/components/tileable-layout/PaneGutter.vue';
+import PaneGutter from '@/components/tileable-layout/PaneGutter.vue'
 import type { LayoutNode } from '@/components/tileable-layout/types'
 import { computed, useTemplateRef } from 'vue'
 
@@ -27,7 +27,6 @@ const gutterDiffCss = computed(() => {
   if (!gutterRef.value) return '0px'
   return gutterRef.value.gutterDiffCss
 })
-
 </script>
 
 <style scoped>
@@ -40,13 +39,17 @@ const gutterDiffCss = computed(() => {
   --gutter-line: rgba(255, 255, 255, 0.25);
   --gutter-hover: rgb(0, 153, 255);
   display: grid;
-  grid-template-columns: calc(50% + v-bind(gutterDiffCss) - var(--gutter-size) / 2) var(--gutter-size) calc(50% - v-bind(gutterDiffCss) - var(--gutter-size) / 2);
+  grid-template-columns: calc(50% + v-bind(gutterDiffCss) - var(--gutter-size) / 2) var(
+      --gutter-size
+    ) calc(50% - v-bind(gutterDiffCss) - var(--gutter-size) / 2);
   grid-template-rows: 1fr;
   height: 100%;
 }
 
 .split[data-direction='column'] {
   grid-template-columns: 1fr;
-  grid-template-rows: calc(50% + v-bind(gutterDiffCss) - var(--gutter-size) / 2) var(--gutter-size) calc(50% - v-bind(gutterDiffCss) - var(--gutter-size) / 2);
+  grid-template-rows: calc(50% + v-bind(gutterDiffCss) - var(--gutter-size) / 2) var(
+      --gutter-size
+    ) calc(50% - v-bind(gutterDiffCss) - var(--gutter-size) / 2);
 }
 </style>

@@ -1,5 +1,5 @@
 export type SplitDirection = 'row' | 'column'
-export type Leaf = { type: 'leaf', id: string }
+export type Leaf = { type: 'leaf'; id: string }
 export type Split = {
   type: 'split'
   id: string

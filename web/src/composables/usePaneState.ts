@@ -6,6 +6,6 @@ export function usePaneState<T>(id: string, init: () => T) {
   const state = computed(() => store.ensure<T>(id, init))
   return {
     state,
-    store
+    store,
   }
 }

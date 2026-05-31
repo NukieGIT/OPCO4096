@@ -15,36 +15,45 @@
 </template>
 
 <script setup lang="ts">
-import TileableLayout from '@/components/tileable-layout/TileableLayout.vue';
-import DragDropPane from '@/components/DragDropPane.vue';
-import DragDropPreview from '@/components/DragDropPreview.vue';
-import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
-import { useTemplateRef } from 'vue';
-import { moveNode, swapNodes } from '@/components/tileable-layout/layoutManager';
-import type { LayoutNode } from '@/components/tileable-layout/types';
-import type { Component } from 'vue';
+import TileableLayout from '@/components/tileable-layout/TileableLayout.vue'
+import DragDropPane from '@/components/DragDropPane.vue'
+import DragDropPreview from '@/components/DragDropPreview.vue'
+import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter'
+import { useTemplateRef } from 'vue'
+import { moveNode, swapNodes } from '@/components/tileable-layout/layoutManager'
+import type { LayoutNode } from '@/components/tileable-layout/types'
+import type { Component } from 'vue'
 
 interface PaneDefinition {
   [key: string]: {
-    is: Component,
+    is: Component
     props: Record<string, unknown>
-    title?: string,
+    title?: string
   }
 }
 
-const { layout, panes, dragSnapThreshold = 0.25 } = defineProps<{
-  layout: LayoutNode,
-  panes: PaneDefinition,
+const {
+  layout,
+  panes,
+  dragSnapThreshold = 0.25,
+} = defineProps<{
+  layout: LayoutNode
+  panes: PaneDefinition
   dragSnapThreshold?: number
 }>()
 
 function clientCoordsToElementCoords(clientX: number, clientY: number, element: Element) {
   const rect = element.getBoundingClientRect()
-  return { x: clientX - rect.left, y: clientY - rect.top, xNorm: (clientX - rect.left) / rect.width, yNorm: (clientY - rect.top) / rect.height }
+  return {
+    x: clientX - rect.left,
+    y: clientY - rect.top,
+    xNorm: (clientX - rect.left) / rect.width,
+    yNorm: (clientY - rect.top) / rect.height,
+  }
 }
 
 const dndPreviewRef = useTemplateRef('dndPreview')
-let snapAction: () => void = () => { }
+let snapAction: () => void = () => {}
 
 monitorForElements({
   onDrag({ source, location }) {
@@ -60,7 +69,11 @@ monitorForElements({
       return
     }
 
-    const { xNorm, yNorm } = clientCoordsToElementCoords(location.current.input.clientX, location.current.input.clientY, destination.element)
+    const { xNorm, yNorm } = clientCoordsToElementCoords(
+      location.current.input.clientX,
+      location.current.input.clientY,
+      destination.element,
+    )
     const elemRect = destination.element.getBoundingClientRect()
 
     if (xNorm < dragSnapThreshold) {
@@ -71,7 +84,7 @@ monitorForElements({
       return
     }
 
-    if (xNorm > (1 - dragSnapThreshold)) {
+    if (xNorm > 1 - dragSnapThreshold) {
       dndPreviewRef.value.moveTo(elemRect.left + elemRect.width / 2, elemRect.top)
       dndPreviewRef.value.resizeTo(elemRect.right, elemRect.bottom)
       dndPreviewRef.value.isVisible = true
@@ -87,7 +100,7 @@ monitorForElements({
       return
     }
 
-    if (yNorm > (1 - dragSnapThreshold)) {
+    if (yNorm > 1 - dragSnapThreshold) {
       dndPreviewRef.value.moveTo(elemRect.left, elemRect.top + elemRect.height / 2)
       dndPreviewRef.value.resizeTo(elemRect.right, elemRect.bottom)
       dndPreviewRef.value.isVisible = true
@@ -103,10 +116,9 @@ monitorForElements({
   onDrop() {
     if (dndPreviewRef.value) dndPreviewRef.value.isVisible = false
     snapAction()
-    snapAction = () => { }
-  }
+    snapAction = () => {}
+  },
 })
 </script>
 
-<style scoped>
-</style>
+<style scoped></style>

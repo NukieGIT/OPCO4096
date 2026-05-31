@@ -1,89 +1,85 @@
 <template>
-
-<div ref="pane" class="draggable-pane">
-  <div ref="header" class="header">
-    <slot name="header">Draggable Pane Header</slot>
+  <div ref="pane" class="draggable-pane">
+    <div ref="header" class="header">
+      <slot name="header">Draggable Pane Header</slot>
+    </div>
+    <div class="content">
+      <slot>Draggable Pane Content</slot>
+    </div>
   </div>
-  <div class="content">
-    <slot>Draggable Pane Content</slot>
-  </div>
-</div>
-
 </template>
 
 <script setup lang="ts">
-import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
-import { onMounted, ref, useTemplateRef } from 'vue';
+import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter'
+import { onMounted, ref, useTemplateRef } from 'vue'
 
-const paneRef = useTemplateRef('pane');
-const headerRef = useTemplateRef('header');
+const paneRef = useTemplateRef('pane')
+const headerRef = useTemplateRef('header')
 
 const { id } = defineProps<{
   id: string
-}>();
+}>()
 
-const isDragging = ref(false);
-const isDraggedOver = ref(false);
+const isDragging = ref(false)
+const isDraggedOver = ref(false)
 
-const draggingOverId = ref<string | null>(null);
+const draggingOverId = ref<string | null>(null)
 
 function isId(str: unknown): str is string {
-  return typeof str === 'string';
+  return typeof str === 'string'
 }
 
 onMounted(() => {
   if (!paneRef.value || !headerRef.value) {
-    console.error('Pane or header element not found');
-    return;
+    console.error('Pane or header element not found')
+    return
   }
 
   draggable({
     element: paneRef.value,
     dragHandle: headerRef.value,
     getInitialData: () => {
-      return { id };
+      return { id }
     },
     onDragStart: () => {
-      isDragging.value = true;
+      isDragging.value = true
     },
     onDrop: () => {
-      isDragging.value = false;
+      isDragging.value = false
     },
-  });
+  })
 
   dropTargetForElements({
     element: paneRef.value,
     getData: () => {
-      return { id };
+      return { id }
     },
     onDragEnter: ({ source }) => {
-      isDraggedOver.value = true;
+      isDraggedOver.value = true
       if (!isId(source.data.id)) {
-        return;
+        return
       }
-      draggingOverId.value = source.data.id;
+      draggingOverId.value = source.data.id
     },
     onDragLeave: () => {
-      isDraggedOver.value = false;
-      draggingOverId.value = null;
+      isDraggedOver.value = false
+      draggingOverId.value = null
     },
     onDrop: () => {
-      isDraggedOver.value = false;
-      draggingOverId.value = null;
-    }
+      isDraggedOver.value = false
+      draggingOverId.value = null
+    },
   })
 })
 
 defineExpose({
   isDragging,
   isDraggedOver,
-  draggingOverId
+  draggingOverId,
 })
-
 </script>
 
 <style scoped>
-
 .draggable-pane {
   border: 1px dotted #ccc;
   overflow: auto;
@@ -101,5 +97,4 @@ defineExpose({
 .content {
   padding: 8px;
 }
-
 </style>

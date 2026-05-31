@@ -1,32 +1,30 @@
 <template>
-
-<div class="gutter" :data-direction="direction" ref="gutter"></div>
-
+  <div class="gutter" :data-direction="direction" ref="gutter"></div>
 </template>
 
 <script setup lang="ts">
-import type { SplitDirection } from '@/components/tileable-layout/types';
+import type { SplitDirection } from '@/components/tileable-layout/types'
 import { draggable } from '@atlaskit/pragmatic-drag-and-drop/element/adapter'
 import { disableNativeDragPreview } from '@atlaskit/pragmatic-drag-and-drop/element/disable-native-drag-preview'
 import { preventUnhandled } from '@atlaskit/pragmatic-drag-and-drop/prevent-unhandled'
-import { computed, onMounted, ref, useTemplateRef } from 'vue';
+import { computed, onMounted, ref, useTemplateRef } from 'vue'
 
 const { direction } = defineProps<{
   direction: SplitDirection
 }>()
 
-const gutterRef = useTemplateRef('gutter');
-let baseGutterDiff = 0;
-const gutterDiff = ref(0);
+const gutterRef = useTemplateRef('gutter')
+let baseGutterDiff = 0
+const gutterDiff = ref(0)
 const gutterDiffCss = computed(() => gutterDiff.value + 'px')
 
 onMounted(() => {
   if (!gutterRef.value) {
-    console.error('Gutter element not found');
-    return;
+    console.error('Gutter element not found')
+    return
   }
 
-    draggable({
+  draggable({
     element: gutterRef.value!,
     onGenerateDragPreview: ({ nativeSetDragImage }) => {
       // we will be moving the line to indicate a drag
@@ -37,7 +35,7 @@ onMounted(() => {
       preventUnhandled.start()
     },
     onDragStart() {
-      baseGutterDiff = gutterDiff.value;
+      baseGutterDiff = gutterDiff.value
     },
     onDrag({ location }) {
       if (direction === 'row') {
@@ -50,18 +48,16 @@ onMounted(() => {
     },
     onDrop() {
       preventUnhandled.stop()
-    }
+    },
   })
 })
 
 defineExpose({
-  gutterDiffCss
+  gutterDiffCss,
 })
-
 </script>
 
 <style scoped>
-
 .gutter {
   position: relative;
   background: transparent;
@@ -110,5 +106,4 @@ defineExpose({
   background: color-mix(in oklab, var(--gutter-hover) 85%, transparent);
   transition-delay: 0ms;
 }
-
 </style>
