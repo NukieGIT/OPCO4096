@@ -89,11 +89,12 @@ monitorForElements({
       return;
     }
 
-    if (sourceId === destinationId) {
+    if (!dndPreviewRef.value) {
       return;
     }
 
-    if (!dndPreviewRef.value) {
+    if (sourceId === destinationId) {
+      dndPreviewRef.value.isVisible = false;
       return;
     }
 
