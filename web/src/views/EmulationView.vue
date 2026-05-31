@@ -18,9 +18,9 @@
       ></canvas>
 
       <div class="controls-panel">
-        <button 
-          :class="['start-btn', { 'running': isRunning }]" 
-          :disabled="rom.length === 0 || isRunning" 
+        <button
+          :class="['start-btn', { 'running': isRunning }]"
+          :disabled="rom.length === 0 || isRunning"
           @click="startRender"
         >
           {{ isRunning ? 'Running...' : 'Start Execution' }}
@@ -105,8 +105,8 @@ const onRomSelected = async (event: Event) => {
 }
 
 const rom = ref<Uint16Array>(new Uint16Array())
-const vRegisters = ref<number[]>(new Array(16).fill(0))
-const stackRegisters = ref<number[]>(new Array(16).fill(0))
+const vRegisters = ref<number[]>(Array.from<number>({ length: 16 }).fill(0))
+const stackRegisters = ref<number[]>(Array.from<number>({ length: 16 }).fill(0))
 const stackPointer = ref(0)
 
 const loadRomFromArrayBuffer = (buffer: ArrayBuffer) => {
@@ -116,12 +116,12 @@ const loadRomFromArrayBuffer = (buffer: ArrayBuffer) => {
   for (let i = 0; i < opcodes.length; i++) {
     const highByte = bytes[i * 2] ?? 0
     const lowByte = bytes[i * 2 + 1] ?? 0
-    
+
     opcodes[i] = (highByte << 8) | lowByte
   }
-  
+
   rom.value = opcodes
-  
+
   const romData = aw.write({ type: ArrayType.U16, data: opcodes })
   const romReader = ar.readStruct(romData)
 
@@ -138,7 +138,7 @@ let gainNode: GainNode | null = null
 const initAudio = () => {
   if (audioContext) return
 
-  audioContext = new (window.AudioContext ?? (window as any).webkitAudioContext)()
+  audioContext = new (window.AudioContext)()
   gainNode = audioContext.createGain()
   gainNode.gain.value = 0
   gainNode.connect(audioContext.destination)
@@ -162,7 +162,7 @@ const stopBeep = () => {
 }
 
 // Standard stable instructions rate for comfortable gameplay (e.g., Space Invaders, Pong)
-const instructionsPerSecond = 500 
+const instructionsPerSecond = 500
 
 const getHighlightedRegisterIndex = (instruction: number): number | null => {
   const opcode = instruction & 0xF000
@@ -205,7 +205,7 @@ let frameId: number
 const isRunning = ref(false)
 
 function startRender() {
-  if (isRunning.value) return 
+  if (isRunning.value) return
 
   const canvas = canvasRef.value
   if (!canvas) return
@@ -220,7 +220,7 @@ function startRender() {
 
   let lastTime = performance.now()
   let instrAccumulator = 0
-  
+
   // Timer Accumulator tracks 60Hz milestones (exactly 1 tick every 16.67ms)
   let timerAccumulator = 0
   const TIMER_RATE_HZ = 60
