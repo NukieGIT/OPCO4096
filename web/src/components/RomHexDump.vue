@@ -42,8 +42,7 @@ const { currentRomIndex } = useOpcoRuntime()
 }
 
 .active {
-  background-color: #0f0;
-  color: #222;
+  background-color: rgb(60, 156, 60);
   font-weight: bold;
 }
 
