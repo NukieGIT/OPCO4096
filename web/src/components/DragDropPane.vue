@@ -83,6 +83,7 @@ defineExpose({
 .draggable-pane {
   border: 1px dotted #ccc;
   background-color: var(--crt-bg);
+  min-height: 100%;
 }
 
 .header {
