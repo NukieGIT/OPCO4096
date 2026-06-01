@@ -80,7 +80,7 @@ const layout = ref<LayoutNode>({
               children: [
                 {
                   type: 'leaf',
-                  id: 'RomHexDumpComponent'
+                  id: 'DisassemblerComponent'
                 },
                 {
                   type: 'leaf',
@@ -123,7 +123,7 @@ const layout = ref<LayoutNode>({
         }
       ]
     },
-    { type: 'leaf', id: 'DisassemblerComponent' },
+    { type: 'leaf', id: 'RomHexDumpComponent' },
   ]
 })
 
