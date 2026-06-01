@@ -13,9 +13,11 @@
 </template>
 
 <script setup lang="ts">
+import { useOpcoRuntime } from '@/composables/opco/useOpcoRuntime';
 import { useOpcoDisassembly } from '../composables/opco/useOpcoDisassembly'
 
-const { hexDump, currentRomIndex, getRegisterHighlightForInstruction } = useOpcoDisassembly()
+const { hexDump } = useOpcoDisassembly()
+const { currentRomIndex } = useOpcoRuntime()
 
 </script>
 
@@ -43,6 +45,10 @@ const { hexDump, currentRomIndex, getRegisterHighlightForInstruction } = useOpco
   background-color: #0f0;
   color: #222;
   font-weight: bold;
+}
+
+*:not(.active) {
+  transition: background-color 0.2s, color 0.2s;
 }
 
 </style>

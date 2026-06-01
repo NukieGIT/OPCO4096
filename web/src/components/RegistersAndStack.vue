@@ -21,10 +21,8 @@
 
 <script setup lang="ts">
 import { useOpcoRuntime } from '@/composables/opco/useOpcoRuntime';
-import { useOpcoDisassembly } from '../composables/opco/useOpcoDisassembly'
 
-const { vRegisters, stackRegisters } = useOpcoRuntime()
-const { currentRegisterIndex } = useOpcoDisassembly()
+const { vRegisters, stackRegisters, currentRegisterIndex } = useOpcoRuntime()
 
 
 </script>
@@ -73,6 +71,10 @@ const { currentRegisterIndex } = useOpcoDisassembly()
 .stack-label {
   color: #8cffb3;
   font-weight: 700;
+}
+
+*:not(.active) {
+  transition: background-color 0.2s, color 0.2s;
 }
 
 .active {
