@@ -58,6 +58,7 @@ monitorForElements({
     if (!dndPreviewRef.value) return
     if (sourceId === destinationId) {
       dndPreviewRef.value.isVisible = false
+      snapAction = () => {}
       return
     }
 
