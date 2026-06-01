@@ -16,10 +16,6 @@ html {
   color-scheme: dark;
 }
 
-body {
-  min-height: 100svh;
-}
-
 *::selection {
   background: var(--crt-selection-bg);
   color: var(--crt-selection-fg);
