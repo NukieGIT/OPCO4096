@@ -26,6 +26,7 @@ const layout = ref<LayoutNode>({
   type: 'split',
   id: crypto.randomUUID(),
   direction: 'row',
+  initialSizeBias: 0.25,
   children: [
     { type: 'leaf', id: 'TestComp1' },
     {
