@@ -41,9 +41,13 @@ const { vRegisters, stackRegisters, currentRegisterIndex } = useOpcoRuntime()
   align-items: center;
   padding: 4px;
   background-color: #222;
-  color: #0f0;
+  color: rgb(128, 255, 128);
   font-family: monospace;
   border-radius: 4px;
+}
+
+.register-cell > span:not(.register-label) {
+  text-shadow: 0px 0px 4px rgba(0, 0, 0, 1.00);
 }
 
 .stack-grid {
@@ -74,12 +78,11 @@ const { vRegisters, stackRegisters, currentRegisterIndex } = useOpcoRuntime()
 }
 
 *:not(.active) {
-  transition: background-color 0.2s, color 0.2s;
+  transition: background-color 0.2s;
 }
 
 .active {
-  background-color: #0f0;
-  color: #222;
+  background-color: rgb(60, 156, 60);
   font-weight: bold;
 }
 
