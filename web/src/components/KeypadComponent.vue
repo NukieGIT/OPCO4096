@@ -1,6 +1,6 @@
 <template>
   <div class="keypad">
-    <button v-for="(key, index) in keys" :key="key" class="keypad-key" @keydown="handleKeyDown(key, index)" @keyup="handleKeyUp(key, index)">{{ key }}</button>
+    <button v-for="(key, index) in keys" :key="key" class="keypad-key" @pointerdown="handlePointerDown(key, index)" @pointerup="handlePointerUp(key, index)">{{ key }}</button>
   </div>
 </template>
 
@@ -24,7 +24,7 @@ const keys = ref([
 
 const { setKey } = useOpcoInput()
 
-function handleKeyDown(_key: string, index: number) {
+function handlePointerDown(_key: string, index: number) {
   const mappedKey = KEY_MAP[index];
   if (mappedKey === undefined) {
     console.warn('No mapping for key index', index);
@@ -33,7 +33,7 @@ function handleKeyDown(_key: string, index: number) {
   setKey(mappedKey, true);
 }
 
-function handleKeyUp(_key: string, index: number) {
+function handlePointerUp(_key: string, index: number) {
   const mappedKey = KEY_MAP[index];
   if (mappedKey === undefined) {
     console.warn('No mapping for key index', index);
