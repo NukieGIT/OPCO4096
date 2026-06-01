@@ -32,6 +32,7 @@ const gutterDiffCss = computed(() => {
 <style scoped>
 .pane {
   height: 100%;
+  overflow: auto
 }
 
 .split {
@@ -44,6 +45,7 @@ const gutterDiffCss = computed(() => {
     ) calc(50% - v-bind(gutterDiffCss) - var(--gutter-size) / 2);
   grid-template-rows: 1fr;
   height: 100%;
+  overflow: auto
 }
 
 .split[data-direction='column'] {
