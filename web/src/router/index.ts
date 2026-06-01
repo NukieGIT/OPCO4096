@@ -23,6 +23,12 @@ const router = createRouter({
       alias: '/ee',
       component: () => import('../views/EnhancedEmulationView.vue'),
     },
+    {
+      path: '/emulation2',
+      name: 'emulation2',
+      alias: '/e2',
+      component: () => import('../views/EmulationView2.vue'),
+    },
   ],
 })
 

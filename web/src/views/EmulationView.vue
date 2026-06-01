@@ -1,4 +1,6 @@
 <template>
+<component :is="DissasemblerActive" />
+<button @click="startRender">Reload dis</button>
   <div class="layout">
     <div class="left-panel">
       <h1>CHIP-8 Upscaled Resolution Test</h1>
@@ -79,9 +81,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onUnmounted, computed } from 'vue'
+import { ref, onUnmounted } from 'vue'
 import { initialize, opco } from '@/ts/wasm/OPCO4096'
 import { ArrayReader, ArrayType, ArrayWriter } from '@/ts/wasm/memory/array'
+import DisassemblerComponent from '@/components/DisassemblerComponent.vue'
+import { useOpcoAudio } from '@/composables/opco/useOpcoAudio'
+import { useOpcoDisassembly } from '@/composables/opco/useOpcoDisassembly'
 
 initialize()
 
@@ -89,11 +94,13 @@ const canvasRef = ref<HTMLCanvasElement | null>(null)
 
 const WIDTH = 64
 const HEIGHT = 32
-const BYTES_PER_PIXEL = 4; // RGBA
 const COLOR_WHITE = 255;
 
 const aw = new ArrayWriter(opco.memory, opco)
 const ar = new ArrayReader(opco.memory)
+
+const { playBeep, stopBeep } = useOpcoAudio()
+const { hexDump, currentRomIndex, currentRegisterIndex, updateCurrentFromPc } = useOpcoDisassembly()
 
 const onRomSelected = async (event: Event) => {
   const input = event.target as HTMLInputElement
@@ -128,81 +135,19 @@ const loadRomFromArrayBuffer = (buffer: ArrayBuffer) => {
   opco.initializeCpu(romReader.ptr, romReader.len)
 }
 
-const currentRomIndex = ref(0)
-const currentRegisterIndex = ref<number | null>(null)
-
-let audioContext: AudioContext | null = null
-let oscillator: OscillatorNode | null = null
-let gainNode: GainNode | null = null
-
-const initAudio = () => {
-  if (audioContext) return
-
-  audioContext = new (window.AudioContext)()
-  gainNode = audioContext.createGain()
-  gainNode.gain.value = 0
-  gainNode.connect(audioContext.destination)
-
-  oscillator = audioContext.createOscillator()
-  oscillator.type = 'square'
-  oscillator.frequency.value = 880
-  oscillator.connect(gainNode)
-  oscillator.start()
-}
-
-const playBeep = () => {
-  if (!audioContext) initAudio()
-  if (!gainNode || !audioContext) return
-  gainNode.gain.setTargetAtTime(0.12, audioContext.currentTime, 0.01)
-}
-
-const stopBeep = () => {
-  if (!gainNode || !audioContext) return
-  gainNode.gain.setTargetAtTime(0, audioContext.currentTime, 0.01)
-}
-
 // Standard stable instructions rate for comfortable gameplay (e.g., Space Invaders, Pong)
 const instructionsPerSecond = 500
 
-const getHighlightedRegisterIndex = (instruction: number): number | null => {
-  const opcode = instruction & 0xF000
-  const x = (instruction & 0x0F00) >> 8
-
-  switch (opcode) {
-    case 0x3000:
-    case 0x4000:
-    case 0x5000:
-    case 0x6000:
-    case 0x7000:
-    case 0x8000:
-    case 0x9000:
-    case 0xC000:
-    case 0xD000:
-    case 0xE000:
-    case 0xF000:
-      return x
-    default:
-      return null
-  }
-}
-
-const hexDump = computed(() => {
-  const values: string[] = []
-
-  for (let i = 0; i < rom.value.length; i++) {
-    const item = rom.value[i]
-    if (typeof item === 'number') {
-      values.push(item.toString(16).toUpperCase().padStart(BYTES_PER_PIXEL, '0'))
-    } else {
-      values.push('0000')
-    }
-  }
-
-  return values
-})
-
 let frameId: number
 const isRunning = ref(false)
+
+function DissasemblerActive() {
+  if (isRunning.value) {
+    return 'disassembler-component'
+  } else {
+    return undefined
+  }
+}
 
 function startRender() {
   if (isRunning.value) return
@@ -240,9 +185,7 @@ function startRender() {
         }
         if (typeof opco.getPC === 'function') {
           const pc = opco.getPC()
-          currentRomIndex.value = Math.max(0, Math.min(rom.value.length - 1, Math.floor((pc - 0x200) / 2)))
-          const currentInstruction = rom.value[currentRomIndex.value]
-          currentRegisterIndex.value = currentInstruction !== undefined ? getHighlightedRegisterIndex(currentInstruction) : null
+          updateCurrentFromPc(pc)
         }
       }
 

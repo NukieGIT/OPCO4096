@@ -48,7 +48,6 @@ window.addEventListener('keydown', (e) => handleKeyEvent(e, true))
 window.addEventListener('keyup', (e) => handleKeyEvent(e, false))
 
 const app = createApp(App)
-
 app.use(createPinia())
 app.use(router)
 

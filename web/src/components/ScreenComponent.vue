@@ -3,7 +3,7 @@
 </template>
 
 <script setup lang="ts">
-import { getCurrentInstance, onMounted, onUnmounted, ref, useTemplateRef } from 'vue'
+import { getCurrentInstance, onMounted, onUnmounted, ref, useTemplateRef, watch } from 'vue'
 
 import simplePosAndUvsVertexShaderSource from '@/glsl/SimplePosAndUvs.vert?raw'
 import bitSamplerFragmentShaderSource from '@/glsl/BitSampler.frag?raw'
@@ -19,6 +19,7 @@ import {
   initGL,
   resizeCanvasToDisplaySize,
 } from '@/ts/webgl/util'
+import { useOpcoFramebuffer } from '@/composables/opco/useOpcoFramebuffer'
 
 /**
  * Pushes the CPU framebuffer data to the GPU.
@@ -28,9 +29,16 @@ import {
 type UpdateFramebuffer = (fbArray: Uint8Array) => boolean
 
 const updateFramebuffer = ref<UpdateFramebuffer>(() => false)
+const { framebuffer, refreshFramebuffer } = useOpcoFramebuffer()
 
 defineExpose({
   updateFramebuffer,
+})
+
+watch(framebuffer, (fb) => {
+  if (updateFramebuffer.value) {
+    updateFramebuffer.value(fb)
+  }
 })
 
 const COMPONENT_NAME = getCurrentInstance()?.type.__name ?? 'UnknownComponent'
@@ -91,6 +99,7 @@ const vertexData = new Float32Array([
 ])
 
 onMounted(() => {
+  refreshFramebuffer()
   if (!canvas.value) {
     console.error('Canvas element not found')
     return

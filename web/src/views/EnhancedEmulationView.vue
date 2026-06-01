@@ -41,8 +41,8 @@ const layout = ref<LayoutNode>({
 })
 </script>
 
-<style scoped>
-main {
-  height: 100dvh;
-}
-</style>
+  <style scoped>
+  main {
+    height: 100dvh;
+  }
+  </style>

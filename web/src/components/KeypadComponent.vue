@@ -5,7 +5,7 @@
 </template>
 
 <script setup lang="ts">
-import { opco } from '@/ts/wasm/OPCO4096';
+import { useOpcoInput } from '@/composables/opco/useOpcoInput'
 import { ref } from 'vue'
 
 const KEY_MAP: number[] = [
@@ -22,22 +22,24 @@ const keys = ref([
   'A', '0', 'B', 'F',
 ])
 
-function handleKeyDown(key: string, index: number) {
+const { setKey } = useOpcoInput()
+
+function handleKeyDown(_key: string, index: number) {
   const mappedKey = KEY_MAP[index];
   if (mappedKey === undefined) {
     console.warn('No mapping for key index', index);
     return;
   }
-  opco.setKey(mappedKey, 1);
+  setKey(mappedKey, true);
 }
 
-function handleKeyUp(key: string, index: number) {
+function handleKeyUp(_key: string, index: number) {
   const mappedKey = KEY_MAP[index];
   if (mappedKey === undefined) {
     console.warn('No mapping for key index', index);
     return;
   }
-  opco.setKey(mappedKey, 0);
+  setKey(mappedKey, false);
 }
 </script>
 
@@ -53,20 +55,7 @@ function handleKeyUp(key: string, index: number) {
   margin: 5px;
   padding: 15px;
   font-size: 18px;
-  color: #fff;
-  background-color: #444;
-  border: none;
-  border-radius: 4px;
   cursor: pointer;
 }
-
-.keypad-key:hover {
-  background-color: #555;
-}
-
-.keypad-key:active {
-  background-color: #666;
-}
-
 
 </style>
