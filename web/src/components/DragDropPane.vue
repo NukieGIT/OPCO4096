@@ -100,6 +100,11 @@ defineExpose({
   flex-grow: 0;
 }
 
+.header > * {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /*
 Solved thanks to this answer
 https://www.reddit.com/r/webdev/comments/1leueuj/comment/myj62ws
