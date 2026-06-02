@@ -110,13 +110,11 @@ Solved thanks to this answer
 https://www.reddit.com/r/webdev/comments/1leueuj/comment/myj62ws
 */
 .content {
-  padding: 8px;
   display: flex;
   position: relative;
 }
 
 .scrollable-content {
-  padding: inherit;
   position: absolute;
   inset: 0;
   overflow: auto;
