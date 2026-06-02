@@ -4,7 +4,9 @@
       <slot name="header">Draggable Pane Header</slot>
     </div>
     <div class="content">
-      <slot>Draggable Pane Content</slot>
+      <div class="scrollable-content">
+        <slot>Draggable Pane Content</slot>
+      </div>
     </div>
   </div>
 </template>
@@ -82,19 +84,35 @@ defineExpose({
 <style scoped>
 .draggable-pane {
   border: 1px dotted #ccc;
-  overflow: auto;
-  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.draggable-pane > * {
+  flex-grow: 1;
 }
 
 .header {
-  position: sticky;
-  top: 0;
   cursor: move;
   background-color: #2e2e2e;
   padding: 4px;
+  flex-grow: 0;
 }
 
+/*
+Solved thanks to this answer
+https://www.reddit.com/r/webdev/comments/1leueuj/comment/myj62ws
+*/
 .content {
   padding: 8px;
+  display: flex;
+  position: relative;
+}
+
+.scrollable-content {
+  padding: inherit;
+  position: absolute;
+  inset: 0;
+  overflow: auto;
 }
 </style>

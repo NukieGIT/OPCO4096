@@ -39,7 +39,12 @@ const initialSizeBiasCss = computed(() => initialSizeBias.value * 100 + '%')
 
 <style scoped>
 .pane {
+  display: flex;
   height: 100%;
+}
+
+.pane > * {
+  flex-grow: 1;
 }
 
 .split {

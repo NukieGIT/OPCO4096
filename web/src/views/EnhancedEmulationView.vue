@@ -17,7 +17,7 @@ const panes: PaneDefinition = {
   TestComp2: { is: TestComp2, props: {}, title: 'Test Component 2' },
   TestComp2FunnyNamed: {
     is: TestComp2,
-    props: { customName: 'Funny Named TestComp2' },
+    props: { customName: 'Funny Named TestComp2'.repeat(200) },
     title: 'Funny Named Test Component 2',
   },
 }
@@ -40,6 +40,9 @@ const layout = ref<LayoutNode>({
     },
   ],
 })
+// const layout = ref<LayoutNode>({
+//   type: 'leaf', id: 'TestComp2FunnyNamed'
+// })
 </script>
 
 <style scoped>
