@@ -4,7 +4,7 @@
       <slot name="leaf" :id="id">
         <DragDropPane :id="id">
           <template #header>
-            <p :title="panes[id]?.title || id">
+            <p class="header-title" :title="panes[id]?.title || id">
               {{ panes[id]?.title || id }}
             </p>
           </template>
@@ -116,4 +116,11 @@ monitorForElements({
 })
 </script>
 
-<style scoped></style>
+<style scoped>
+
+.header-title {
+  font-size: 0.9em;
+  white-space: nowrap;
+}
+
+</style>
