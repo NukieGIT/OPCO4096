@@ -41,6 +41,7 @@ const initialSizeBiasCss = computed(() => initialSizeBias.value * 100 + '%')
 .pane {
   display: flex;
   height: 100%;
+  min-width: 0;
 }
 
 .pane > * {

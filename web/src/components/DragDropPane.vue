@@ -86,6 +86,7 @@ defineExpose({
   border: 1px dotted #ccc;
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .draggable-pane > * {
