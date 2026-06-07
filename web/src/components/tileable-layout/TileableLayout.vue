@@ -4,26 +4,56 @@
   </div>
 
   <div v-else class="split" :data-direction="node.direction">
-    <TileableLayout v-for="child in node.children" :key="child.id" :node="child">
+    <TileableLayout v-for="child in node.children" :key="child.id" :node="child" ref="child">
       <template #leaf="{ id }">
         <slot name="leaf" :id="id" />
       </template>
     </TileableLayout>
-    <PaneGutter ref="gutter" :direction="node.direction" />
+    <PaneGutter ref="gutter" :direction="node.direction" :min-drag-offset="minDragOffset" :max-drag-offset="maxDragOffset" />
   </div>
 </template>
 
 <script setup lang="ts">
 import PaneGutter from '@/components/tileable-layout/PaneGutter.vue'
 import type { LayoutNode } from '@/components/tileable-layout/types'
-import { clamp } from '@vueuse/core';
-import { computed, useTemplateRef } from 'vue'
+import { clamp, useElementSize } from '@vueuse/core';
+import { computed, onMounted, ref, useTemplateRef, watch } from 'vue'
 
 defineSlots<{ leaf(props: { id: string }): void }>()
 
 const { node } = defineProps<{ node: LayoutNode }>()
 
-const gutterRef = useTemplateRef('gutter')
+const minDragOffset = ref(0)
+const maxDragOffset = ref(Number.POSITIVE_INFINITY)
+
+const childRef = useTemplateRef('child')
+onMounted(() => {
+  if (!childRef.value) {
+    return
+  }
+
+  if (node.type != 'split') return
+  const child1Size = useElementSize(childRef.value[0])
+  const child2Size = useElementSize(childRef.value[1])
+
+  if (node.direction === 'row') {
+    watch([child1Size.width, child2Size.width], ([child1Width, child2Width]) => {
+      const totalWidth = child1Width + child2Width
+      if (totalWidth === 0) return
+      minDragOffset.value = -totalWidth / 2 + 50
+      maxDragOffset.value = totalWidth / 2 - 50
+    })
+  } else {
+    watch([child1Size.height, child2Size.height], ([child1Height, child2Height]) => {
+      const totalHeight = child1Height + child2Height
+      if (totalHeight === 0) return
+      minDragOffset.value = -totalHeight / 2 + 50
+      maxDragOffset.value = totalHeight / 2 - 50
+    })
+  }
+})
+
+const gutterRef = useTemplateRef<InstanceType<typeof PaneGutter>>('gutter')
 const gutterDiffCss = computed(() => {
   if (!gutterRef.value) return '0px'
   return gutterRef.value.gutterDiffCss

@@ -7,16 +7,31 @@ import type { SplitDirection } from '@/components/tileable-layout/types'
 import { draggable } from '@atlaskit/pragmatic-drag-and-drop/element/adapter'
 import { disableNativeDragPreview } from '@atlaskit/pragmatic-drag-and-drop/element/disable-native-drag-preview'
 import { preventUnhandled } from '@atlaskit/pragmatic-drag-and-drop/prevent-unhandled'
+import { clamp } from '@vueuse/core'
 import { computed, onMounted, ref, useTemplateRef } from 'vue'
 
-const { direction } = defineProps<{
+const { direction, minDragOffset, maxDragOffset } = defineProps<{
   direction: SplitDirection
+  minDragOffset?: number
+  maxDragOffset?: number
 }>()
 
 const gutterRef = useTemplateRef('gutter')
 let baseGutterDiff = 0
 const gutterDiff = ref(0)
-const gutterDiffCss = computed(() => gutterDiff.value + 'px')
+const gutterDiffComputed = computed({
+  get() {
+    return gutterDiff.value
+  },
+  set(value) {
+    gutterDiff.value = clamp(
+      value,
+      minDragOffset ?? Number.NEGATIVE_INFINITY,
+      maxDragOffset ?? Number.POSITIVE_INFINITY,
+    )
+  },
+})
+const gutterDiffCss = computed(() => gutterDiffComputed.value + 'px')
 
 onMounted(() => {
   if (!gutterRef.value) {
@@ -35,15 +50,15 @@ onMounted(() => {
       preventUnhandled.start()
     },
     onDragStart() {
-      baseGutterDiff = gutterDiff.value
+      baseGutterDiff = gutterDiffComputed.value
     },
     onDrag({ location }) {
       if (direction === 'row') {
         const diffX = location.current.input.clientX - location.initial.input.clientX
-        gutterDiff.value = baseGutterDiff + diffX
+        gutterDiffComputed.value = baseGutterDiff + diffX
       } else {
         const diffY = location.current.input.clientY - location.initial.input.clientY
-        gutterDiff.value = baseGutterDiff + diffY
+        gutterDiffComputed.value = baseGutterDiff + diffY
       }
     },
     onDrop() {
