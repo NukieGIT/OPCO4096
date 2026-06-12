@@ -1,22 +1,24 @@
 <template>
-  <div v-if="node.type === 'leaf'" class="pane">
+  <div v-if="node.type === 'element'" class="pane">
     <slot name="leaf" :id="node.id"></slot>
   </div>
 
   <div v-else class="split" :data-direction="node.direction">
-    <TileableLayout v-for="child in node.children" :key="child.id" :node="child" ref="child">
-      <template #leaf="{ id }">
-        <slot name="leaf" :id="id" />
-      </template>
-    </TileableLayout>
-    <PaneGutter ref="gutter" :direction="node.direction" :min-drag-offset="minDragOffset" :max-drag-offset="maxDragOffset" />
+    <template v-for="(child, index) in node.children" :key="child.id">
+      <TileableLayout :node="child" ref="child">
+        <template #leaf="{ id }">
+          <slot name="leaf" :id="id" />
+        </template>
+      </TileableLayout>
+      <PaneGutter v-if="index < node.children.length - 1" ref="gutter" :direction="node.direction" :min-drag-offset="minDragOffset" :max-drag-offset="maxDragOffset" />
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
 import PaneGutter from '@/components/tileable-layout/PaneGutter.vue'
 import type { LayoutNode } from '@/components/tileable-layout/types'
-import { clamp, useElementSize } from '@vueuse/core';
+import { useElementSize } from '@vueuse/core';
 import { computed, onMounted, ref, useTemplateRef, watch } from 'vue'
 
 defineSlots<{ leaf(props: { id: string }): void }>()
@@ -26,13 +28,36 @@ const { node } = defineProps<{ node: LayoutNode }>()
 const minDragOffset = ref(0)
 const maxDragOffset = ref(Number.POSITIVE_INFINITY)
 
+const gutterRef = useTemplateRef('gutter')
 const childRef = useTemplateRef('child')
+
+const gridTemplateCss = computed(() => {
+  if (node.type === 'element') return '100%'
+  const gutterSize = 5
+  const equalSplit = 100 / node.children.length
+
+  let template = ''
+
+  for (let i = 0; i < node.children.length; i++) {
+    const gutterDiff = gutterRef.value?.[i]?.gutterDiffComputed ?? 0
+    const prevGutterDiff = gutterRef.value?.[i - 1]?.gutterDiffComputed ?? 0
+    let toAdd = `calc(${equalSplit}% + ${gutterDiff}px - ${prevGutterDiff}px) `
+    if (i < node.children.length - 1) {
+      toAdd = `calc(${equalSplit}% + ${gutterDiff}px - ${prevGutterDiff}px - ${gutterSize}px) ${gutterSize}px `
+    }
+
+    template += toAdd
+  }
+
+  return template
+})
+
 onMounted(() => {
   if (!childRef.value) {
     return
   }
 
-  if (node.type != 'split') return
+  if (node.type != 'group') return
   const child1Size = useElementSize(childRef.value[0])
   const child2Size = useElementSize(childRef.value[1])
 
@@ -53,18 +78,6 @@ onMounted(() => {
   }
 })
 
-const gutterRef = useTemplateRef<InstanceType<typeof PaneGutter>>('gutter')
-const gutterDiffCss = computed(() => {
-  if (!gutterRef.value) return '0px'
-  return gutterRef.value.gutterDiffCss
-})
-
-const initialSizeBias = computed(() => {
-  if (node.type === 'leaf') return 0.5
-  return clamp(node.initialSizeBias ?? 0.5, 0, 1)
-})
-const initialSizeBiasCss = computed(() => initialSizeBias.value * 100 + '%')
-
 </script>
 
 <style scoped>
@@ -79,21 +92,14 @@ const initialSizeBiasCss = computed(() => initialSizeBias.value * 100 + '%')
 }
 
 .split {
-  --gutter-size: 5px;
-  --gutter-line: rgba(255, 255, 255, 0.25);
-  --gutter-hover: rgb(0, 153, 255);
   display: grid;
-  grid-template-columns: calc(v-bind(initialSizeBiasCss) + v-bind(gutterDiffCss) - var(--gutter-size) / 2) var(
-      --gutter-size
-    ) calc(100% - v-bind(initialSizeBiasCss) - v-bind(gutterDiffCss) - var(--gutter-size) / 2);
+  grid-template-columns: v-bind(gridTemplateCss);
   grid-template-rows: 1fr;
   height: 100%;
 }
 
 .split[data-direction='column'] {
   grid-template-columns: 1fr;
-  grid-template-rows: calc(v-bind(initialSizeBiasCss) + v-bind(gutterDiffCss) - var(--gutter-size) / 2) var(
-      --gutter-size
-    ) calc(100% - v-bind(initialSizeBiasCss) - v-bind(gutterDiffCss) - var(--gutter-size) / 2);
+  grid-template-rows: v-bind(gridTemplateCss);
 }
 </style>

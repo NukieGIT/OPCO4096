@@ -3,7 +3,7 @@
 </template>
 
 <script setup lang="ts">
-import type { SplitDirection } from '@/components/tileable-layout/types'
+import type { GroupDirection } from '@/components/tileable-layout/types'
 import { draggable } from '@atlaskit/pragmatic-drag-and-drop/element/adapter'
 import { disableNativeDragPreview } from '@atlaskit/pragmatic-drag-and-drop/element/disable-native-drag-preview'
 import { preventUnhandled } from '@atlaskit/pragmatic-drag-and-drop/prevent-unhandled'
@@ -11,7 +11,7 @@ import { clamp } from '@vueuse/core'
 import { computed, onMounted, ref, useTemplateRef } from 'vue'
 
 const { direction, minDragOffset, maxDragOffset } = defineProps<{
-  direction: SplitDirection
+  direction: GroupDirection
   minDragOffset?: number
   maxDragOffset?: number
 }>()
@@ -31,7 +31,6 @@ const gutterDiffComputed = computed({
     )
   },
 })
-const gutterDiffCss = computed(() => gutterDiffComputed.value + 'px')
 
 onMounted(() => {
   if (!gutterRef.value) {
@@ -68,12 +67,14 @@ onMounted(() => {
 })
 
 defineExpose({
-  gutterDiffCss,
+  gutterDiffComputed,
 })
 </script>
 
 <style scoped>
 .gutter {
+  --gutter-line: rgba(255, 255, 255, 0.25);
+  --gutter-hover: rgb(0, 153, 255);
   position: relative;
   background: transparent;
   cursor: ew-resize;
@@ -82,13 +83,10 @@ defineExpose({
 }
 
 .gutter[data-direction='row'] {
-  grid-column: 2;
-  grid-row: 1;
+  cursor: ew-resize;
 }
 
 .gutter[data-direction='column'] {
-  grid-column: 1;
-  grid-row: 2;
   cursor: ns-resize;
 }
 

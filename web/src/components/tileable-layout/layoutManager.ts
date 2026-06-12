@@ -1,7 +1,7 @@
-import type { LayoutNode, Leaf, Split, SplitDirection } from '@/components/tileable-layout/types'
+import type { LayoutNode, GroupElement, Group, GroupDirection } from '@/components/tileable-layout/types'
 
 export type NodeLocation = {
-  parent: Split | null
+  parent: Group | null
   index: 0 | 1
   node: LayoutNode
 }
@@ -9,7 +9,7 @@ export type NodeLocation = {
 export function findNodeLocation(
   root: LayoutNode,
   id: string,
-  parent: Split | null = null,
+  parent: Group | null = null,
   edge: 0 | 1 = 0,
 ): NodeLocation | null {
   if (root.id === id) {
@@ -46,7 +46,7 @@ export function addNode(
   root: LayoutNode,
   targetId: string,
   edge: 0 | 1,
-  direction: SplitDirection,
+  direction: GroupDirection,
   newNode: LayoutNode,
 ) {
   const targetLoc = findNodeLocation(root, targetId)
@@ -56,7 +56,7 @@ export function addNode(
   }
 
   if (targetLoc.node.type === 'leaf') {
-    const newSplit: Split = {
+    const newSplit: Group = {
       type: 'split',
       id: crypto.randomUUID(),
       direction: direction,
@@ -85,11 +85,11 @@ export function removeNode(root: LayoutNode, targetId: string) {
     } else {
       // If the parent is the root, we replace its contents with the sibling's contents
       if (sibling.type === 'leaf') {
-        const leafRoot = root as Leaf
+        const leafRoot = root as GroupElement
         leafRoot.type = 'leaf'
         leafRoot.id = sibling.id
       } else {
-        const splitRoot = root as Split
+        const splitRoot = root as Group
         splitRoot.type = 'split'
         splitRoot.id = sibling.id
         splitRoot.direction = sibling.direction
@@ -104,7 +104,7 @@ export function moveNode(
   fromId: string,
   toId: string,
   edge: 0 | 1,
-  direction: SplitDirection,
+  direction: GroupDirection,
 ) {
   const fromLoc = findNodeLocation(root, fromId)
   const toLoc = findNodeLocation(root, toId)

@@ -32,70 +32,65 @@ const panes: PaneDefinition = {
 }
 
 const layout = ref<LayoutNode>({
-  type: 'split',
+  type: 'group',
   id: crypto.randomUUID(),
   direction: 'row',
-  initialSizeBias: 0.25,
   children: [
     {
-      type: 'split',
+      type: 'group',
       id: crypto.randomUUID(),
       direction: 'column',
       initialSizeBias: 0.2,
       children: [
-        { type: 'leaf', id: 'NavigationTree' },
-        { type: 'leaf', id: 'ProjectExplorer' },
+        { type: 'element', id: 'NavigationTree' },
+        { type: 'element', id: 'ProjectExplorer' },
       ],
     },
+
     {
-      type: 'split',
+      type: 'group',
       id: crypto.randomUUID(),
-      direction: 'row',
+      direction: 'column',
+      initialSizeBias: 0.6,
       children: [
-        {
-          type: 'split',
-          id: crypto.randomUUID(),
-          direction: 'column',
-          initialSizeBias: 0.7,
-          children: [
-            { type: 'leaf', id: 'CodeEditor' },
-            { type: 'leaf', id: 'Terminal' },
-          ],
-        },
-        {
-          type: 'split',
-          id: crypto.randomUUID(),
-          direction: 'column',
-          children: [
-            { type: 'leaf', id: 'Inspector' },
-            { type: 'leaf', id: 'ChatAssistant' },
-          ],
-        },
+        { type: 'element', id: 'CodeEditor' },
+        { type: 'element', id: 'Terminal' },
+      ],
+    },
+
+    {
+      type: 'group',
+      id: crypto.randomUUID(),
+      direction: 'column',
+      initialSizeBias: 0.2,
+      children: [
+        { type: 'element', id: 'Inspector' },
+        { type: 'element', id: 'ChatAssistant' },
       ],
     },
   ],
 })
 
 // const layout = ref<LayoutNode>({
-//   type: 'split',
+//   type: 'group',
 //   id: crypto.randomUUID(),
 //   direction: 'row',
 //   initialSizeBias: 0.25,
 //   children: [
-//     { type: 'leaf', id: 'TestComp1' },
+//     { type: 'element', id: 'TestComp1' },
 //     {
-//       type: 'split',
+//       type: 'group',
 //       id: crypto.randomUUID(),
 //       direction: 'column',
 //       children: [
-//         { type: 'leaf', id: 'TestComp2' },
-//         { type: 'leaf', id: 'TestComp2FunnyNamed' },
+//         { type: 'element', id: 'TestComp2' },
+//         { type: 'element', id: 'TestComp2FunnyNamed' },
 //       ],
 //     },
 //   ],
 // })
 // const layout = ref<LayoutNode>({
-//   type: 'leaf', id: 'TestComp2FunnyNamed'
+//   type: 'element', id: 'TestComp2FunnyNamed'
 // })
 </script>
 

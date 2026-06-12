@@ -1,10 +1,10 @@
-export type SplitDirection = 'row' | 'column'
-export type Leaf = { type: 'leaf'; id: string }
-export type Split = {
-  type: 'split'
+export type GroupDirection = 'row' | 'column'
+export type GroupElement = { type: 'element'; id: string }
+export type Group = {
+  type: 'group'
   id: string
-  direction: SplitDirection
+  direction: GroupDirection
   initialSizeBias?: number
-  children: [LayoutNode, LayoutNode]
+  children: LayoutNode[]
 }
-export type LayoutNode = Leaf | Split
+export type LayoutNode = GroupElement | Group
