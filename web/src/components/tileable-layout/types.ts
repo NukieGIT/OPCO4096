@@ -5,6 +5,6 @@ export type Group = {
   id: string
   direction: GroupDirection
   initialSizeBias?: number
-  children: LayoutNode[]
+  children: [LayoutNode, LayoutNode, ...LayoutNode[]]
 }
 export type LayoutNode = GroupElement | Group
