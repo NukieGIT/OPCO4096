@@ -3,7 +3,7 @@
     <slot name="leaf" :id="node.id"></slot>
   </div>
 
-  <div v-else class="split" :data-direction="node.direction">
+  <div v-else class="group" :data-direction="node.direction">
     <template v-for="(child, index) in node.children" :key="child.id">
       <TileableLayout :node="child" ref="child">
         <template #leaf="{ id }">
@@ -25,7 +25,7 @@ defineSlots<{ leaf(props: { id: string }): void }>()
 
 const { node } = defineProps<{ node: LayoutNode }>()
 
-const minDragOffset = ref(0)
+const minDragOffset = ref(Number.NEGATIVE_INFINITY)
 const maxDragOffset = ref(Number.POSITIVE_INFINITY)
 
 const gutterRef = useTemplateRef('gutter')
@@ -52,31 +52,31 @@ const gridTemplateCss = computed(() => {
   return template
 })
 
-onMounted(() => {
-  if (!childRef.value) {
-    return
-  }
+// onMounted(() => {
+//   if (!childRef.value) {
+//     return
+//   }
 
-  if (node.type != 'group') return
-  const child1Size = useElementSize(childRef.value[0])
-  const child2Size = useElementSize(childRef.value[1])
+//   if (node.type != 'group') return
+//   const child1Size = useElementSize(childRef.value[0])
+//   const child2Size = useElementSize(childRef.value[1])
 
-  if (node.direction === 'row') {
-    watch([child1Size.width, child2Size.width], ([child1Width, child2Width]) => {
-      const totalWidth = child1Width + child2Width
-      if (totalWidth === 0) return
-      minDragOffset.value = -totalWidth / 2 + 50
-      maxDragOffset.value = totalWidth / 2 - 50
-    })
-  } else {
-    watch([child1Size.height, child2Size.height], ([child1Height, child2Height]) => {
-      const totalHeight = child1Height + child2Height
-      if (totalHeight === 0) return
-      minDragOffset.value = -totalHeight / 2 + 50
-      maxDragOffset.value = totalHeight / 2 - 50
-    })
-  }
-})
+//   if (node.direction === 'row') {
+//     watch([child1Size.width, child2Size.width], ([child1Width, child2Width]) => {
+//       const totalWidth = child1Width + child2Width
+//       if (totalWidth === 0) return
+//       minDragOffset.value = -totalWidth / 2 + 50
+//       maxDragOffset.value = totalWidth / 2 - 50
+//     })
+//   } else {
+//     watch([child1Size.height, child2Size.height], ([child1Height, child2Height]) => {
+//       const totalHeight = child1Height + child2Height
+//       if (totalHeight === 0) return
+//       minDragOffset.value = -totalHeight / 2 + 50
+//       maxDragOffset.value = totalHeight / 2 - 50
+//     })
+//   }
+// })
 
 </script>
 
@@ -91,14 +91,14 @@ onMounted(() => {
   flex-grow: 1;
 }
 
-.split {
+.group {
   display: grid;
   grid-template-columns: v-bind(gridTemplateCss);
   grid-template-rows: 1fr;
   height: 100%;
 }
 
-.split[data-direction='column'] {
+.group[data-direction='column'] {
   grid-template-columns: 1fr;
   grid-template-rows: v-bind(gridTemplateCss);
 }

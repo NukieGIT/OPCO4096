@@ -22,8 +22,8 @@ import DragDropPane from '@/components/DragDropPane.vue'
 import DragDropPreview from '@/components/DragDropPreview.vue'
 import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter'
 import { useTemplateRef } from 'vue'
-import { moveNode, swapNodes } from '@/components/tileable-layout/layoutManager'
-import type { LayoutNode } from '@/components/tileable-layout/types'
+import { findNodeLocation, moveNode, NodeManageResult, swapNodes } from '@/components/tileable-layout/layoutManager'
+import type { GroupDirection, LayoutNode } from '@/components/tileable-layout/types'
 import type { PaneDefinition } from '@/components/drag-drop-layout/types'
 
 const {
@@ -64,6 +64,22 @@ monitorForElements({
       return
     }
 
+    const destinationLoc = findNodeLocation(layout, destinationId)
+    if (!destinationLoc) {
+      dndPreviewRef.value.isVisible = false
+      snapAction = () => {}
+      console.warn('Could not find destination node in layout. Ignoring drop.')
+      return
+    }
+
+    const destinationParent = destinationLoc.parent
+    if (destinationParent == null) {
+      dndPreviewRef.value.isVisible = false
+      snapAction = () => {}
+      console.warn('Cannot move to root level. Ignoring drop.')
+      return
+    }
+
     const { xNorm, yNorm } = clientCoordsToElementCoords(
       location.current.input.clientX,
       location.current.input.clientY,
@@ -75,7 +91,14 @@ monitorForElements({
       dndPreviewRef.value.moveTo(elemRect.left, elemRect.top)
       dndPreviewRef.value.resizeTo(elemRect.left + elemRect.width / 2, elemRect.bottom)
       dndPreviewRef.value.isVisible = true
-      snapAction = () => moveNode(layout, sourceId, destinationId, 0, 'row')
+      snapAction = () =>
+        moveNodeHelper(
+          layout,
+          sourceId,
+        { group: destinationParent.id, element: destinationId },
+        { group: destinationLoc.index, element: 0 },
+        'row'
+        )
       return
     }
 
@@ -83,7 +106,7 @@ monitorForElements({
       dndPreviewRef.value.moveTo(elemRect.left + elemRect.width / 2, elemRect.top)
       dndPreviewRef.value.resizeTo(elemRect.right, elemRect.bottom)
       dndPreviewRef.value.isVisible = true
-      snapAction = () => moveNode(layout, sourceId, destinationId, 1, 'row')
+      snapAction = () => moveNodeHelper(layout, sourceId, { group: destinationParent.id, element: destinationId }, { group: destinationLoc.index, element: 1 }, 'row')
       return
     }
 
@@ -91,7 +114,7 @@ monitorForElements({
       dndPreviewRef.value.moveTo(elemRect.left, elemRect.top)
       dndPreviewRef.value.resizeTo(elemRect.right, elemRect.top + elemRect.height / 2)
       dndPreviewRef.value.isVisible = true
-      snapAction = () => moveNode(layout, sourceId, destinationId, 0, 'column')
+      snapAction = () => moveNodeHelper(layout, sourceId, { group: destinationParent.id, element: destinationId }, { group: destinationLoc.index, element: 0 }, 'column')
       return
     }
 
@@ -99,7 +122,7 @@ monitorForElements({
       dndPreviewRef.value.moveTo(elemRect.left, elemRect.top + elemRect.height / 2)
       dndPreviewRef.value.resizeTo(elemRect.right, elemRect.bottom)
       dndPreviewRef.value.isVisible = true
-      snapAction = () => moveNode(layout, sourceId, destinationId, 1, 'column')
+      snapAction = () => moveNodeHelper(layout, sourceId, { group: destinationParent.id, element: destinationId }, { group: destinationLoc.index, element: 1 }, 'column')
       return
     }
 
@@ -114,6 +137,20 @@ monitorForElements({
     snapAction = () => {}
   },
 })
+
+function moveNodeHelper(root: LayoutNode, fromId: string, toId: { group: string, element: string }, index: { group: number, element: number }, direction: GroupDirection) {
+  let moveNodeResult = moveNode(root, fromId, toId.group, index.group, direction)
+
+  if (moveNodeResult === NodeManageResult.DIFFERENT_DIRECTION) {
+    moveNodeResult = moveNode(root, fromId, toId.element, index.element, direction)
+    if (moveNodeResult !== NodeManageResult.SUCCESS) {
+      console.error('Unexpected layout state: failed to move node after after conforming to different direction requirements')
+    }
+  } else if (moveNodeResult !== NodeManageResult.SUCCESS) {
+    console.error(`Unexpected layout state ${moveNodeResult}: failed to move node`)
+  }
+}
+
 </script>
 
 <style scoped>
